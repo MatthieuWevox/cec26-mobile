@@ -35,6 +35,11 @@ class NewsDetailScreen extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               titlePadding: const EdgeInsets.fromLTRB(56, 0, 16, 16),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: AppTheme.headerGradient,
+                ),
+              ),
             ),
           ),
           SliverToBoxAdapter(

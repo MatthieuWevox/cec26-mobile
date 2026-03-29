@@ -37,25 +37,32 @@ class MemberAvatar extends StatelessWidget {
             width: radius * 2,
             height: radius * 2,
             fit: BoxFit.cover,
-            errorWidget: (_, __, ___) => _fallback(),
+            errorWidget: (_, __, ___) => _gradientFallback(),
           ),
         ),
       );
     }
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: AppTheme.primaryColor,
-      child: _fallback(),
-    );
+    return _gradientFallback(asCircle: true, withRadius: radius);
   }
 
-  Widget _fallback() {
-    return Text(
-      _initials,
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: radius * 0.65,
-        fontWeight: FontWeight.w700,
+  Widget _gradientFallback({bool asCircle = false, double? withRadius}) {
+    final r = withRadius ?? radius;
+    return Container(
+      width: r * 2,
+      height: r * 2,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: AppTheme.primaryGradient,
+      ),
+      child: Center(
+        child: Text(
+          _initials,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: r * 0.65,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
@@ -81,11 +88,18 @@ class CompanyLogo extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppTheme.dividerColor),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withAlpha(10),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           child: CachedNetworkImage(
             imageUrl: logoUrl!,
             width: size,
@@ -104,8 +118,15 @@ class CompanyLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppTheme.accentColor.withAlpha(30),
-        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.accentTeal.withAlpha(40),
+            AppTheme.accentColor.withAlpha(30),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(
         Icons.business_rounded,
@@ -126,9 +147,14 @@ class CecLoadingWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(
-            color: AppTheme.primaryColor,
-            strokeWidth: 3,
+          const SizedBox(
+            width: 44,
+            height: 44,
+            child: CircularProgressIndicator(
+              color: AppTheme.primaryLight,
+              strokeWidth: 3,
+              strokeCap: StrokeCap.round,
+            ),
           ),
           if (message != null) ...[
             const SizedBox(height: 16),
@@ -137,6 +163,7 @@ class CecLoadingWidget extends StatelessWidget {
               style: const TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -160,18 +187,27 @@ class CecErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.wifi_off_rounded,
-              size: 56,
-              color: AppTheme.textSecondary,
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppTheme.errorColor.withAlpha(15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                size: 36,
+                color: AppTheme.errorColor,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               message,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 15,
+                height: 1.5,
               ),
             ),
             if (onRetry != null) ...[
@@ -207,14 +243,34 @@ class CecEmptyWidget extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: AppTheme.textSecondary),
-            const SizedBox(height: 16),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.primaryLight.withAlpha(20),
+                    AppTheme.accentTeal.withAlpha(20),
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 38,
+                color: AppTheme.primaryLight.withAlpha(180),
+              ),
+            ),
+            const SizedBox(height: 20),
             Text(
               message,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 15,
+                height: 1.5,
               ),
             ),
           ],
@@ -233,11 +289,30 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: Theme.of(context).textTheme.headlineSmall),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
           if (trailing != null) trailing!,
         ],
       ),
@@ -260,31 +335,41 @@ class InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppTheme.accentColor),
-          const SizedBox(width: 12),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppTheme.accentTeal.withAlpha(20),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: AppTheme.accentTeal),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 2),
                 Text(
                   label,
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppTheme.textSecondary,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.8,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   value,
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

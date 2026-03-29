@@ -21,11 +21,7 @@ class MemberDetailScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppTheme.primaryColor, Color(0xFF3D3A8C)],
-                  ),
+                  gradient: AppTheme.headerGradient,
                 ),
                 child: Center(
                   child: Column(

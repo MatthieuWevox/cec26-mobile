@@ -32,6 +32,10 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Entreprises'),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
+        ),
+        backgroundColor: Colors.transparent,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -69,14 +73,35 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Rechercher une entreprise…',
-                    prefixIcon: Icon(Icons.search_rounded),
-                    isDense: true,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withAlpha(10),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  onChanged: (v) => setState(() => _search = v),
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Rechercher une entreprise…',
+                      prefixIcon: Icon(Icons.search_rounded),
+                      isDense: true,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      filled: false,
+                    ),
+                    onChanged: (v) => setState(() => _search = v),
+                  ),
                 ),
               ),
               Expanded(
@@ -86,7 +111,7 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                         icon: Icons.business_rounded,
                       )
                     : RefreshIndicator(
-                        color: AppTheme.primaryColor,
+                        color: AppTheme.primaryLight,
                         onRefresh: () async => setState(() => _load()),
                         child: ListView.builder(
                           padding: const EdgeInsets.only(top: 8, bottom: 24),
@@ -110,95 +135,122 @@ class _CompanyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CompanyDetailScreen(company: company),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CompanyLogo(
-                logoUrl: company.logoUrl,
-                companyName: company.nom,
-                size: 56,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withAlpha(12),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CompanyDetailScreen(company: company),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      company.nom,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    if (company.sousTitre != null &&
-                        company.sousTitre!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                CompanyLogo(
+                  logoUrl: company.logoUrl,
+                  companyName: company.nom,
+                  size: 56,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        company.sousTitre!,
+                        company.nom,
                         style: const TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textSecondary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: -0.2,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                    if (company.activites != null &&
-                        company.activites!.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        company.activites!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.accentColor,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    if (company.members != null &&
-                        company.members!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.people_outline_rounded,
-                            size: 13,
+                      if (company.sousTitre != null &&
+                          company.sousTitre!.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          company.sousTitre!,
+                          style: const TextStyle(
+                            fontSize: 12,
                             color: AppTheme.textSecondary,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${company.members!.length} membre${company.members!.length > 1 ? 's' : ''}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                      if (company.activites != null &&
+                          company.activites!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentTeal.withAlpha(18),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            company.activites!,
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
+                              color: AppTheme.accentTeal,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                      if (company.members != null &&
+                          company.members!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.people_outline_rounded,
+                              size: 12,
                               color: AppTheme.textSecondary,
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${company.members!.length} membre${company.members!.length > 1 ? 's' : ''}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppTheme.textSecondary,
-              ),
-            ],
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppTheme.textSecondary,
+                ),
+              ],
+            ),
           ),
         ),
       ),
