@@ -293,11 +293,12 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? now,
+      initialDate: _selectedDate ?? today,
       firstDate: DateTime(2020),
-      lastDate: now,
+      lastDate: today,
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(

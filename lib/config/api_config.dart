@@ -1,7 +1,9 @@
 /// API configuration file.
+/// ⚠️ Before deployment, update [baseUrl] with your actual API domain.
 /// Change [baseUrl] to switch between test and production environments.
 class ApiConfig {
   /// Base URL of the API (without trailing slash).
+  /// Example: 'https://cec2026.example.com/api'
   static const String baseUrl = 'https://your-domain.com/api';
 
   // Public routes

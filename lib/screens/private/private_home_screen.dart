@@ -20,11 +20,12 @@ class PrivateHomeScreen extends StatelessWidget {
       return const LoginScreen();
     }
 
-    return _MemberDashboard();
+    return const _MemberDashboard();
   }
 }
 
 class _MemberDashboard extends StatelessWidget {
+  const _MemberDashboard();
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
