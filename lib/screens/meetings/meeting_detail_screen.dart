@@ -18,6 +18,10 @@ class MeetingDetailScreen extends StatefulWidget {
 
 class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
   late Meeting _meeting;
+  final _guestFormKey = GlobalKey<FormState>();
+  final _guestNomCtrl = TextEditingController();
+  final _guestPrenomCtrl = TextEditingController();
+  final _guestEntrepriseCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -48,10 +52,10 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
       return;
     }
 
-    final formKey = GlobalKey<FormState>();
-    final nomCtrl = TextEditingController();
-    final prenomCtrl = TextEditingController();
-    final entrepriseCtrl = TextEditingController();
+    _guestFormKey.currentState?.reset();
+    _guestNomCtrl.clear();
+    _guestPrenomCtrl.clear();
+    _guestEntrepriseCtrl.clear();
 
     await showModalBottomSheet<void>(
       context: context,
@@ -69,109 +73,117 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
             ),
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
             child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppTheme.dividerColor,
-                        borderRadius: BorderRadius.circular(2),
+              key: _guestFormKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppTheme.dividerColor,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Ajouter un invité',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Ajouter un invité',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: prenomCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Prénom *',
-                      prefixIcon: Icon(Icons.person_outline_rounded),
+                    const SizedBox(height: 24),
+                    TextFormField(
+                      controller: _guestPrenomCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Prénom *',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Champ requis'
+                          : null,
+                      textCapitalization: TextCapitalization.words,
                     ),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Champ requis'
-                        : null,
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: nomCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nom *',
-                      prefixIcon: Icon(Icons.person_outline_rounded),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _guestNomCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nom *',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Champ requis'
+                          : null,
+                      textCapitalization: TextCapitalization.characters,
                     ),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Champ requis'
-                        : null,
-                    textCapitalization: TextCapitalization.characters,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: entrepriseCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Entreprise',
-                      prefixIcon: Icon(Icons.business_rounded),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _guestEntrepriseCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Entreprise',
+                        prefixIcon: Icon(Icons.business_rounded),
+                      ),
+                      textCapitalization: TextCapitalization.words,
                     ),
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        if (formKey.currentState!.validate()) {
-                          try {
-                            final api = ApiService(authToken: auth.token);
-                            await api.addGuestToMeeting(
-                              meetingId: _meeting.id,
-                              nom: nomCtrl.text.trim(),
-                              prenom: prenomCtrl.text.trim(),
-                              nomEntreprise: entrepriseCtrl.text.trim().isEmpty
-                                  ? null
-                                  : entrepriseCtrl.text.trim(),
-                            );
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Invité ajouté avec succès.'),
-                                  backgroundColor: AppTheme.successColor,
-                                ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (_guestFormKey.currentState!.validate()) {
+                            try {
+                              final api = ApiService(authToken: auth.token);
+                              await api.addGuestToMeeting(
+                                meetingId: _meeting.id,
+                                nom: _guestNomCtrl.text.trim(),
+                                prenom: _guestPrenomCtrl.text.trim(),
+                                nomEntreprise:
+                                    _guestEntrepriseCtrl.text.trim().isEmpty
+                                        ? null
+                                        : _guestEntrepriseCtrl.text.trim(),
                               );
-                            }
-                          } on ApiException catch (e) {
-                            if (ctx.mounted) {
-                              ScaffoldMessenger.of(ctx).showSnackBar(
-                                SnackBar(content: Text(e.message)),
-                              );
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Invité ajouté avec succès.'),
+                                    backgroundColor: AppTheme.successColor,
+                                  ),
+                                );
+                              }
+                            } on ApiException catch (e) {
+                              if (ctx.mounted) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  SnackBar(content: Text(e.message)),
+                                );
+                              }
                             }
                           }
-                        }
-                      },
-                      child: const Text('Ajouter l\'invité'),
+                        },
+                        child: const Text('Ajouter l\'invité'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         );
       },
     );
-    nomCtrl.dispose();
-    prenomCtrl.dispose();
-    entrepriseCtrl.dispose();
+  }
+
+  @override
+  void dispose() {
+    _guestNomCtrl.dispose();
+    _guestPrenomCtrl.dispose();
+    _guestEntrepriseCtrl.dispose();
+    super.dispose();
   }
 
   @override
