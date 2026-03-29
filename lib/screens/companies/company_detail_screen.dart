@@ -38,7 +38,9 @@ class CompanyDetailScreen extends StatelessWidget {
                           imageUrl: company.photoUrl!,
                           fit: BoxFit.cover,
                           errorWidget: (_, __, ___) => Container(
-                            color: AppTheme.primaryColor,
+                            decoration: const BoxDecoration(
+                              gradient: AppTheme.headerGradient,
+                            ),
                           ),
                         ),
                         const DecoratedBox(
@@ -48,14 +50,18 @@ class CompanyDetailScreen extends StatelessWidget {
                               end: Alignment.bottomCenter,
                               colors: [
                                 Colors.transparent,
-                                Color(0xCC272262),
+                                Color(0xCC1D1565),
                               ],
                             ),
                           ),
                         ),
                       ],
                     )
-                  : null,
+                  : Container(
+                      decoration: const BoxDecoration(
+                        gradient: AppTheme.headerGradient,
+                      ),
+                    ),
             ),
           ),
           SliverToBoxAdapter(

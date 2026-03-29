@@ -26,192 +26,270 @@ class PrivateHomeScreen extends StatelessWidget {
 
 class _MemberDashboard extends StatelessWidget {
   const _MemberDashboard();
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final member = auth.currentMember;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mon espace'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded),
-            tooltip: 'Déconnexion',
-            onPressed: () => _confirmLogout(context),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile header
-            Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppTheme.primaryColor, Color(0xFF3A3690)],
-                ),
+      backgroundColor: AppTheme.backgroundLight,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 180,
+            pinned: true,
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            title: const Text('Mon espace'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.logout_rounded),
+                tooltip: 'Déconnexion',
+                onPressed: () => _confirmLogout(context),
               ),
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-              child: Row(
-                children: [
-                  MemberAvatar(
-                    name: member?.fullName ?? 'Membre',
-                    radius: 36,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Bonjour, ${member?.prenom ?? ''}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: AppTheme.headerGradient,
+                ),
+                child: Stack(
+                  children: [
+                    // Decorative circles
+                    Positioned(
+                      top: -20,
+                      right: -20,
+                      child: Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withAlpha(8),
                         ),
-                        if (member?.company != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            member!.company!.nom,
-                            style: TextStyle(
-                              color: Colors.white.withAlpha(200),
-                              fontSize: 13,
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 10,
+                      right: 60,
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.accentTeal.withAlpha(30),
+                        ),
+                      ),
+                    ),
+                    // Profile content
+                    Positioned(
+                      bottom: 20,
+                      left: 20,
+                      right: 20,
+                      child: Row(
+                        children: [
+                          // Avatar with white ring
+                          Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withAlpha(120),
+                                width: 2,
+                              ),
+                            ),
+                            child: MemberAvatar(
+                              name: member?.fullName ?? 'Membre',
+                              radius: 34,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Bonjour,',
+                                  style: TextStyle(
+                                    color: Colors.white.withAlpha(180),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                Text(
+                                  member?.prenom ?? 'Membre',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                if (member?.company != null) ...[
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.business_rounded,
+                                        size: 12,
+                                        color: AppTheme.accentLight.withAlpha(200),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          member!.company!.nom,
+                                          style: TextStyle(
+                                            color: AppTheme.accentLight.withAlpha(220),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+          ),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Quick access
+                const SectionHeader(title: 'Mes actions'),
 
-            const SizedBox(height: 8),
-
-            // Quick access
-            const SectionHeader(title: 'Mes actions'),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.3,
-                children: [
-                  _ActionTile(
-                    icon: Icons.thumb_up_outlined,
-                    label: 'Recommandations',
-                    subtitle: 'Reçues & envoyées',
-                    color: AppTheme.primaryColor,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const RecommendationsScreen(),
-                      ),
-                    ),
-                  ),
-                  _ActionTile(
-                    icon: Icons.handshake_outlined,
-                    label: 'Remerciements',
-                    subtitle: 'Reçus & envoyés',
-                    color: AppTheme.accentColor,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ThanksScreen(),
-                      ),
-                    ),
-                  ),
-                  _ActionTile(
-                    icon: Icons.person_outline_rounded,
-                    label: 'Mon profil',
-                    subtitle: 'Modifier mes infos',
-                    color: const Color(0xFF8B5CF6),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(),
-                      ),
-                    ),
-                  ),
-                  _ActionTile(
-                    icon: Icons.business_outlined,
-                    label: 'Mon entreprise',
-                    subtitle: "Modifier l'entreprise",
-                    color: const Color(0xFFEA580C),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(
-                          initialTab: ProfileTab.company,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Member info summary
-            if (member != null) ...[
-              const SectionHeader(title: 'Mes informations'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(10),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.25,
                     children: [
-                      InfoRow(
-                        icon: Icons.person_rounded,
-                        label: 'NOM COMPLET',
-                        value: member.fullName,
-                      ),
-                      const Divider(),
-                      InfoRow(
-                        icon: Icons.email_outlined,
-                        label: 'EMAIL',
-                        value: member.email,
-                      ),
-                      if (member.telephone != null &&
-                          member.telephone!.isNotEmpty) ...[
-                        const Divider(),
-                        InfoRow(
-                          icon: Icons.phone_outlined,
-                          label: 'TÉLÉPHONE',
-                          value: member.telephone!,
+                      _ActionTile(
+                        icon: Icons.thumb_up_rounded,
+                        label: 'Recommandations',
+                        subtitle: 'Reçues & envoyées',
+                        gradient: AppTheme.primaryGradient,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RecommendationsScreen(),
+                          ),
                         ),
-                      ],
+                      ),
+                      _ActionTile(
+                        icon: Icons.handshake_rounded,
+                        label: 'Remerciements',
+                        subtitle: 'Reçus & envoyés',
+                        gradient: AppTheme.accentGradient,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ThanksScreen(),
+                          ),
+                        ),
+                      ),
+                      _ActionTile(
+                        icon: Icons.person_rounded,
+                        label: 'Mon profil',
+                        subtitle: 'Modifier mes infos',
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ProfileScreen(),
+                          ),
+                        ),
+                      ),
+                      _ActionTile(
+                        icon: Icons.business_rounded,
+                        label: 'Mon entreprise',
+                        subtitle: "Modifier l'entreprise",
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFEA580C), Color(0xFFF97316)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ProfileScreen(
+                              initialTab: ProfileTab.company,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ],
-        ),
+
+                // Member info
+                if (member != null) ...[
+                  const SectionHeader(title: 'Mes informations'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withAlpha(10),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          InfoRow(
+                            icon: Icons.person_rounded,
+                            label: 'NOM COMPLET',
+                            value: member.fullName,
+                          ),
+                          const Divider(height: 16),
+                          InfoRow(
+                            icon: Icons.email_outlined,
+                            label: 'EMAIL',
+                            value: member.email,
+                          ),
+                          if (member.telephone != null &&
+                              member.telephone!.isNotEmpty) ...[
+                            const Divider(height: 16),
+                            InfoRow(
+                              icon: Icons.phone_outlined,
+                              label: 'TÉLÉPHONE',
+                              value: member.telephone!,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -220,6 +298,9 @@ class _MemberDashboard extends StatelessWidget {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         title: const Text('Déconnexion'),
         content: const Text('Voulez-vous vraiment vous déconnecter ?'),
         actions: [
@@ -247,61 +328,75 @@ class _ActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String subtitle;
-  final Color color;
+  final Gradient gradient;
   final VoidCallback onTap;
 
   const _ActionTile({
     required this.icon,
     required this.label,
     required this.subtitle,
-    required this.color,
+    required this.gradient,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      elevation: 2,
-      shadowColor: Colors.black.withAlpha(15),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withAlpha(25),
-                  borderRadius: BorderRadius.circular(10),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withAlpha(10),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 22),
                 ),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textSecondary,
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

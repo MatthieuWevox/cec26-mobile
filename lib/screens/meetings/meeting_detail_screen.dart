@@ -196,6 +196,11 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                 ),
               ),
               titlePadding: const EdgeInsets.fromLTRB(56, 0, 16, 16),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: AppTheme.headerGradient,
+                ),
+              ),
             ),
           ),
           SliverToBoxAdapter(
