@@ -4,7 +4,7 @@
 class ApiConfig {
   /// Base URL of the API (without trailing slash).
   /// Example: 'https://cec2026.example.com/api'
-  static const String baseUrl = 'http://192.168.1.56:8000/api';
+  static const String baseUrl = 'https://cec.wevox.cloud/api';
 
   // Public routes
   static String get news => '$baseUrl/news';
