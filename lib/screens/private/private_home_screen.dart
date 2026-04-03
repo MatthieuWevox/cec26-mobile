@@ -227,7 +227,7 @@ class _MemberDashboard extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               MemberAvatar(
-                name: member?.fullName ?? 'Membre',
+                name: member?.prenom ?? 'Membre',
                 radius: 32,
               ),
             ],
