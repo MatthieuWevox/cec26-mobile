@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -5,7 +7,7 @@ import '../models/member.dart';
 import '../services/api_service.dart';
 
 const _kTokenKey = 'auth_token';
-const _kMemberIdKey = 'member_id';
+const _kMemberKey = 'member_data';
 
 class AuthProvider extends ChangeNotifier {
   String? _token;
@@ -21,13 +23,41 @@ class AuthProvider extends ChangeNotifier {
 
   ApiService get _api => ApiService(authToken: _token);
 
+  /// Persist member data to local storage.
+  Future<void> _saveMember(Member? member) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (member != null) {
+      await prefs.setString(_kMemberKey, jsonEncode(member.toJson()));
+    } else {
+      await prefs.remove(_kMemberKey);
+    }
+  }
+
   /// Restore session from local storage on app start.
   Future<void> restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_kTokenKey);
-    if (saved != null && saved.isNotEmpty) {
-      _token = saved;
+    final savedToken = prefs.getString(_kTokenKey);
+    if (savedToken == null || savedToken.isEmpty) return;
+
+    _token = savedToken;
+
+    // Restore member from local cache first
+    final savedMember = prefs.getString(_kMemberKey);
+    if (savedMember != null && savedMember.isNotEmpty) {
+      try {
+        _currentMember =
+            Member.fromJson(jsonDecode(savedMember) as Map<String, dynamic>);
+      } catch (_) {}
+    }
+    notifyListeners();
+
+    // Then refresh from API in background
+    try {
+      _currentMember = await _api.getProfile();
+      await _saveMember(_currentMember);
       notifyListeners();
+    } catch (_) {
+      // Keep cached data — don't clear session on network error
     }
   }
 
@@ -46,9 +76,7 @@ class AuthProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       if (_token != null) {
         await prefs.setString(_kTokenKey, _token!);
-        if (_currentMember != null) {
-          await prefs.setInt(_kMemberIdKey, _currentMember!.id);
-        }
+        await _saveMember(_currentMember);
       }
       _isLoading = false;
       notifyListeners();
@@ -76,7 +104,7 @@ class AuthProvider extends ChangeNotifier {
     _currentMember = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kTokenKey);
-    await prefs.remove(_kMemberIdKey);
+    await prefs.remove(_kMemberKey);
     notifyListeners();
   }
 
@@ -97,6 +125,7 @@ class AuthProvider extends ChangeNotifier {
         presentation: presentation,
       );
       _currentMember = updated;
+      await _saveMember(_currentMember);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -177,6 +206,7 @@ class AuthProvider extends ChangeNotifier {
           company: company,
         );
       }
+      await _saveMember(_currentMember);
       _isLoading = false;
       notifyListeners();
       return true;

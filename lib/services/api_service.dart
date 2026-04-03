@@ -121,6 +121,11 @@ class ApiService {
 
   // ─── Private routes ────────────────────────────────────────────────────────
 
+  Future<Member> getProfile() async {
+    final data = await _get(ApiConfig.me);
+    return Member.fromJson(data as Map<String, dynamic>);
+  }
+
   Future<List<Recommendation>> getRecommendationsReceived() async {
     final data = await _get(ApiConfig.recommendationsReceived);
     return (data as List)

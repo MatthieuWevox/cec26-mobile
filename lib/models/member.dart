@@ -97,4 +97,30 @@ class Member {
           : null,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nom': nom,
+      'prenom': prenom,
+      'email': email,
+      'telephone': telephone,
+      'presentation': presentation,
+      'company_id': companyId,
+      'created_at': createdAt,
+      'updated_at': updatedAt,
+      if (company != null)
+        'company': {
+          'id': company!.id,
+          'nom': company!.nom,
+          'sous_titre': company!.sousTitre,
+          'activites': company!.activites,
+          'description': company!.description,
+          'logo_url': company!.logoUrl,
+          'photo_url': company!.photoUrl,
+          'created_at': company!.createdAt,
+          'updated_at': company!.updatedAt,
+        },
+    };
+  }
 }
