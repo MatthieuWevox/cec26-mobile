@@ -19,11 +19,32 @@ class NewsDetailScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 120,
+            expandedHeight: 240,
             pinned: true,
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/actu.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0x33000000),
+                          Color(0xB3000000),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               title: Text(
                 news.titre,
                 style: const TextStyle(

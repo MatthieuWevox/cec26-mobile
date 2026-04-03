@@ -87,6 +87,7 @@ class _NewsCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
@@ -98,85 +99,116 @@ class _NewsCard extends StatelessWidget {
           );
         },
         child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
+          padding: const EdgeInsets.all(12),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: news.statut == 'publié'
-                          ? AppTheme.accentColor.withAlpha(30)
-                          : Colors.orange.withAlpha(30),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      news.statut,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: news.statut == 'publié'
-                            ? AppTheme.accentColor
-                            : Colors.orange,
-                      ),
-                    ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 112,
+                  height: 112,
+                  child: Image.asset(
+                    'assets/actu.jpg',
+                    fit: BoxFit.cover,
                   ),
-                  const Spacer(),
-                  if (dateStr.isNotEmpty)
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: news.statut == 'publié'
+                                  ? AppTheme.accentColor.withAlpha(30)
+                                  : Colors.orange.withAlpha(30),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              news.statut,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: news.statut == 'publié'
+                                    ? AppTheme.accentColor
+                                    : Colors.orange,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (dateStr.isNotEmpty)
+                          Flexible(
+                            child: Text(
+                              dateStr,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     Text(
-                      dateStr,
+                      news.titre,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                news.titre,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              if (news.sousTitre.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  news.sousTitre,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                    height: 1.4,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Text(
-                    'Lire la suite',
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                    if (news.sousTitre.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        news.sousTitre,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppTheme.textSecondary,
+                          height: 1.35,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    const Row(
+                      children: [
+                        Text(
+                          'Lire la suite',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 16,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 16,
-                    color: AppTheme.primaryColor,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
