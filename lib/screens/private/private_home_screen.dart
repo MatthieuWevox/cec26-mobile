@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/member.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common_widgets.dart';
@@ -161,7 +162,7 @@ class _MemberDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, AuthProvider auth, dynamic member) {
+  Widget _buildProfileHeader(BuildContext context, AuthProvider auth, Member? member) {
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 20,
@@ -192,7 +193,7 @@ class _MemberDashboard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      member?.prenom ?? 'Membre',
+                      member?.prenom ?? '',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 26,
