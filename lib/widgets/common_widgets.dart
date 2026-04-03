@@ -81,11 +81,11 @@ class CompanyLogo extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppTheme.dividerColor),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           child: CachedNetworkImage(
             imageUrl: logoUrl!,
             width: size,
@@ -104,8 +104,8 @@ class CompanyLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppTheme.accentColor.withAlpha(30),
-        borderRadius: BorderRadius.circular(10),
+        color: AppTheme.accentColor.withAlpha(20),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(
         Icons.business_rounded,
@@ -127,7 +127,7 @@ class CecLoadingWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const CircularProgressIndicator(
-            color: AppTheme.primaryColor,
+            color: AppTheme.accentColor,
             strokeWidth: 3,
           ),
           if (message != null) ...[

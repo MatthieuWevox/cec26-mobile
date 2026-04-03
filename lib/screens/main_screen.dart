@@ -1,3 +1,4 @@
+import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,7 +6,6 @@ import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import 'companies/companies_screen.dart';
 import 'meetings/meetings_screen.dart';
-import 'members/members_screen.dart';
 import 'news/news_screen.dart';
 import 'private/private_home_screen.dart';
 
@@ -23,53 +23,76 @@ class _MainScreenState extends State<MainScreen> {
     NewsScreen(),
     MeetingsScreen(),
     CompaniesScreen(),
-    MembersScreen(),
     PrivateHomeScreen(),
+  ];
+
+  static const _iconList = <IconData>[
+    Icons.newspaper_rounded,
+    Icons.event_rounded,
+    Icons.business_rounded,
+    Icons.person_rounded,
+  ];
+
+  static const _labels = <String>[
+    'Actualités',
+    'Réunions',
+    'Entreprises',
+    'Mon espace',
   ];
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
+    // Dynamically update the last icon & label based on auth state
+    final icons = List<IconData>.from(_iconList);
+    final labels = List<String>.from(_labels);
+    if (!auth.isLoggedIn) {
+      icons[3] = Icons.lock_rounded;
+      labels[3] = 'Connexion';
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+      bottomNavigationBar: AnimatedBottomNavigationBar.builder(
+        itemCount: icons.length,
+        leftCornerRadius: 10,
+        rightCornerRadius: 10,
+        tabBuilder: (int index, bool isActive) {
+          final color =
+              isActive ? AppTheme.accentColor : Colors.white;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icons[index], size: 24, color: color),
+              const SizedBox(height: 4),
+              Text(
+                labels[index],
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight:
+                      isActive ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          );
+        },
+        activeIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.newspaper_outlined),
-            activeIcon: Icon(Icons.newspaper_rounded),
-            label: 'Actualités',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.event_outlined),
-            activeIcon: Icon(Icons.event_rounded),
-            label: 'Réunions',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.business_outlined),
-            activeIcon: Icon(Icons.business_rounded),
-            label: 'Entreprises',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline_rounded),
-            activeIcon: Icon(Icons.people_rounded),
-            label: 'Membres',
-          ),
-          BottomNavigationBarItem(
-            icon: auth.isLoggedIn
-                ? const Icon(Icons.person_outline_rounded)
-                : const Icon(Icons.lock_outline_rounded),
-            activeIcon: auth.isLoggedIn
-                ? const Icon(Icons.person_rounded)
-                : const Icon(Icons.lock_rounded),
-            label: auth.isLoggedIn ? 'Mon espace' : 'Connexion',
-          ),
-        ],
+        gapLocation: GapLocation.none,
+        backgroundColor: AppTheme.primaryColor,
+        shadow: const BoxShadow(
+          offset: Offset(0, -1),
+          blurRadius: 12,
+          spreadRadius: 0.5,
+          color: Colors.black12,
+        ),
+        height: 64,
       ),
     );
   }

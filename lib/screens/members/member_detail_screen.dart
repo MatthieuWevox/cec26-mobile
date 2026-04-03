@@ -21,18 +21,17 @@ class MemberDetailScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppTheme.primaryColor, Color(0xFF3D3A8C)],
-                  ),
+                  gradient: AppTheme.headerGradient,
                 ),
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 40),
-                      MemberAvatar(name: member.fullName, radius: 36),
+                      Hero(
+                        tag: 'member-avatar-${member.id}',
+                        child: MemberAvatar(name: member.fullName, radius: 36),
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         member.fullName,
@@ -60,14 +59,8 @@ class MemberDetailScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(12),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: AppTheme.cardShadow,
                       ),
                       child: Row(
                         children: [
@@ -119,14 +112,8 @@ class MemberDetailScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(10),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: AppTheme.cardShadow,
                     ),
                     child: Column(
                       children: [
@@ -164,10 +151,17 @@ class MemberDetailScreen extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withAlpha(8),
-                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppTheme.primaryColor.withAlpha(10),
+                            AppTheme.primaryColor.withAlpha(5),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: AppTheme.primaryColor.withAlpha(30),
+                          color: AppTheme.primaryColor.withAlpha(20),
                         ),
                       ),
                       child: Text(

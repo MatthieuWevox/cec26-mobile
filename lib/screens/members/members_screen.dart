@@ -112,8 +112,18 @@ class _MemberCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
         onTap: () {
           Navigator.push(
             context,
@@ -188,6 +198,7 @@ class _MemberCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

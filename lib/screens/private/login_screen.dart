@@ -47,8 +47,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor,
-      body: SafeArea(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppTheme.headerGradient,
+        ),
+        child: SafeArea(
         child: Column(
           children: [
             // Header
@@ -59,16 +62,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 90,
-                      height: 90,
+                      width: double.infinity,
+                      height: 120,
                       decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(20),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(24),
                         child: Image.asset(
-                          'assets/CEC-06.jpg',
+                          'assets/logo_white_nobg.png',
                           fit: BoxFit.contain,
                           errorBuilder: (_, __, ___) => const Icon(
                             Icons.business_center_rounded,
@@ -78,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 16),
                     const Text(
                       'Espace Membres',
                       style: TextStyle(
@@ -195,6 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

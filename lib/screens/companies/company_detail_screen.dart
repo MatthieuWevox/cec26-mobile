@@ -67,10 +67,13 @@ class CompanyDetailScreen extends StatelessWidget {
                   // Logo + subtitle
                   Row(
                     children: [
-                      CompanyLogo(
-                        logoUrl: company.logoUrl,
-                        companyName: company.nom,
-                        size: 64,
+                      Hero(
+                        tag: 'company-logo-${company.id}',
+                        child: CompanyLogo(
+                          logoUrl: company.logoUrl,
+                          companyName: company.nom,
+                          size: 64,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -111,8 +114,15 @@ class CompanyDetailScreen extends StatelessWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.accentColor.withAlpha(20),
-                        borderRadius: BorderRadius.circular(10),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppTheme.accentColor.withAlpha(20),
+                            AppTheme.accentColor.withAlpha(10),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         children: [
@@ -195,11 +205,16 @@ class _MemberTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      child: Material(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           onTap: () {
             Navigator.push(
               context,
@@ -212,7 +227,10 @@ class _MemberTile extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                MemberAvatar(name: member.fullName, radius: 22),
+                Hero(
+                  tag: 'member-avatar-${member.id}',
+                  child: MemberAvatar(name: member.fullName, radius: 22),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

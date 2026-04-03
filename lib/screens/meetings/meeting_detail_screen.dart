@@ -221,14 +221,8 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(12),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: AppTheme.cardShadow,
                     ),
                     child: Column(
                       children: [
@@ -263,10 +257,17 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppTheme.accentColor.withAlpha(20),
-                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppTheme.accentColor.withAlpha(15),
+                            AppTheme.accentColor.withAlpha(8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppTheme.accentColor.withAlpha(60),
+                          color: AppTheme.accentColor.withAlpha(40),
                         ),
                       ),
                       child: Text(
@@ -349,8 +350,8 @@ class _GuestTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.dividerColor),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Row(
         children: [

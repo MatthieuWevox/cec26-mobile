@@ -27,9 +27,12 @@ class NewsDetailScreen extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    'assets/actu.jpg',
-                    fit: BoxFit.cover,
+                  Hero(
+                    tag: 'news-image-${news.id}',
+                    child: Image.asset(
+                      'assets/actu.jpg',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   const DecoratedBox(
                     decoration: BoxDecoration(
@@ -68,23 +71,22 @@ class NewsDetailScreen extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
+                          horizontal: 12,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: news.statut == 'publié'
-                              ? AppTheme.accentColor.withAlpha(30)
-                              : Colors.orange.withAlpha(30),
+                              ? AppTheme.accentColor
+                              : Colors.orange,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          news.statut,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: news.statut == 'publié'
-                                ? AppTheme.accentColor
-                                : Colors.orange,
+                          news.statut.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.8,
                           ),
                         ),
                       ),
@@ -92,17 +94,18 @@ class NewsDetailScreen extends StatelessWidget {
                       if (dateStr.isNotEmpty)
                         Row(
                           children: [
-                            const Icon(
-                              Icons.calendar_today_rounded,
+                            Icon(
+                              Icons.schedule_rounded,
                               size: 14,
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.accentColor,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               dateStr,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: AppTheme.textSecondary,
+                                color: AppTheme.accentColor,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],

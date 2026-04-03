@@ -30,15 +30,6 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Réunions'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => setState(() => _load()),
-          ),
-        ],
-      ),
       body: FutureBuilder<List<Meeting>>(
         future: _future,
         builder: (context, snapshot) {
@@ -59,16 +50,83 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
             );
           }
           return RefreshIndicator(
-            color: AppTheme.primaryColor,
+            color: AppTheme.accentColor,
             onRefresh: () async => setState(() => _load()),
-            child: ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 24),
-              itemCount: items.length,
-              itemBuilder: (context, index) =>
-                  _MeetingCard(meeting: items[index]),
+            child: CustomScrollView(
+              slivers: [
+                _buildHeader(),
+                SliverPadding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 24),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) =>
+                          _MeetingCard(meeting: items[index]),
+                      childCount: items.length,
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return SliverToBoxAdapter(
+      child: Container(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 20,
+          left: 24,
+          right: 24,
+          bottom: 24,
+        ),
+        decoration: const BoxDecoration(
+          gradient: AppTheme.headerGradient,
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(28),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(25),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.event_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Text(
+                  'Réunions',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Calendrier des prochaines rencontres',
+              style: TextStyle(
+                color: Colors.white.withAlpha(180),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -99,10 +157,15 @@ class _MeetingCard extends StatelessWidget {
       timeStr = '${timeParts[0]}h${timeParts[1]}';
     }
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppTheme.cardShadow,
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         onTap: () {
           Navigator.push(
             context,
@@ -116,15 +179,18 @@ class _MeetingCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Date badge
+              // Date badge with gradient
               Container(
-                width: 60,
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                width: 64,
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
+                  gradient: isUpcoming
+                      ? AppTheme.primaryGradient
+                      : null,
                   color: isUpcoming
-                      ? AppTheme.primaryColor
-                      : AppTheme.primaryColor.withAlpha(40),
-                  borderRadius: BorderRadius.circular(12),
+                      ? null
+                      : AppTheme.primaryColor.withAlpha(15),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -133,19 +199,20 @@ class _MeetingCard extends StatelessWidget {
                       dayStr,
                       style: TextStyle(
                         color: isUpcoming ? Colors.white : AppTheme.primaryColor,
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
                         height: 1,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       monthStr,
                       style: TextStyle(
                         color: isUpcoming
-                            ? Colors.white.withAlpha(200)
+                            ? Colors.white.withAlpha(220)
                             : AppTheme.primaryColor,
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 1,
                       ),
                     ),
@@ -170,51 +237,65 @@ class _MeetingCard extends StatelessWidget {
                       Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
+                          horizontal: 10,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.accentColor.withAlpha(30),
-                          borderRadius: BorderRadius.circular(8),
+                          gradient: AppTheme.accentGradient,
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
                           'À VENIR',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.accentColor,
+                            color: Colors.white,
                             letterSpacing: 1,
                           ),
                         ),
                       ),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.access_time_rounded,
-                          size: 14,
-                          color: AppTheme.accentColor,
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentColor.withAlpha(20),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.access_time_rounded,
+                            size: 14,
+                            color: AppTheme.accentColor,
+                          ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 8),
                         Text(
                           timeStr,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.accentColor,
+                            color: AppTheme.textPrimary,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.location_on_rounded,
-                          size: 14,
-                          color: AppTheme.textSecondary,
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withAlpha(15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.location_on_rounded,
+                            size: 14,
+                            color: AppTheme.primaryColor,
+                          ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             meeting.adresse,
@@ -229,15 +310,22 @@ class _MeetingCard extends StatelessWidget {
                       ],
                     ),
                     if (meeting.guests.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.people_outline_rounded,
-                            size: 14,
-                            color: AppTheme.textSecondary,
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accentColor.withAlpha(15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.people_outline_rounded,
+                              size: 14,
+                              color: AppTheme.accentColor,
+                            ),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 8),
                           Text(
                             '${meeting.guests.length} invité${meeting.guests.length > 1 ? 's' : ''}',
                             style: const TextStyle(
@@ -251,9 +339,9 @@ class _MeetingCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondary.withAlpha(120),
               ),
             ],
           ),

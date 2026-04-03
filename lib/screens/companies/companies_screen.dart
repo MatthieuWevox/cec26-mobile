@@ -30,15 +30,6 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Entreprises'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => setState(() => _load()),
-          ),
-        ],
-      ),
       body: FutureBuilder<List<Company>>(
         future: _future,
         builder: (context, snapshot) {
@@ -66,39 +57,119 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                   )
                   .toList();
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Rechercher une entreprise…',
-                    prefixIcon: Icon(Icons.search_rounded),
-                    isDense: true,
-                  ),
-                  onChanged: (v) => setState(() => _search = v),
-                ),
-              ),
-              Expanded(
-                child: items.isEmpty
-                    ? const CecEmptyWidget(
-                        message: 'Aucune entreprise trouvée.',
-                        icon: Icons.business_rounded,
-                      )
-                    : RefreshIndicator(
-                        color: AppTheme.primaryColor,
-                        onRefresh: () async => setState(() => _load()),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.only(top: 8, bottom: 24),
-                          itemCount: items.length,
-                          itemBuilder: (context, index) =>
-                              _CompanyCard(company: items[index]),
+          return CustomScrollView(
+            slivers: [
+              _buildHeader(),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: AppTheme.cardShadow,
+                    ),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher une entreprise…',
+                        prefixIcon: Icon(
+                          Icons.search_rounded,
+                          color: AppTheme.textSecondary.withAlpha(150),
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        fillColor: Colors.transparent,
+                        filled: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
                         ),
                       ),
+                      onChanged: (v) => setState(() => _search = v),
+                    ),
+                  ),
+                ),
               ),
+              if (items.isEmpty)
+                const SliverFillRemaining(
+                  child: CecEmptyWidget(
+                    message: 'Aucune entreprise trouvée.',
+                    icon: Icons.business_rounded,
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 24),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) =>
+                          _CompanyCard(company: items[index]),
+                      childCount: items.length,
+                    ),
+                  ),
+                ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return SliverToBoxAdapter(
+      child: Container(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 20,
+          left: 24,
+          right: 24,
+          bottom: 24,
+        ),
+        decoration: const BoxDecoration(
+          gradient: AppTheme.headerGradient,
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(28),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(25),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.business_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Text(
+                  'Entreprises',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Découvrez les entreprises du réseau',
+              style: TextStyle(
+                color: Colors.white.withAlpha(180),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -110,10 +181,15 @@ class _CompanyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppTheme.cardShadow,
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         onTap: () {
           Navigator.push(
             context,
@@ -126,10 +202,13 @@ class _CompanyCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              CompanyLogo(
-                logoUrl: company.logoUrl,
-                companyName: company.nom,
-                size: 56,
+              Hero(
+                tag: 'company-logo-${company.id}',
+                child: CompanyLogo(
+                  logoUrl: company.logoUrl,
+                  companyName: company.nom,
+                  size: 56,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -160,14 +239,25 @@ class _CompanyCard extends StatelessWidget {
                     if (company.activites != null &&
                         company.activites!.isNotEmpty) ...[
                       const SizedBox(height: 6),
-                      Text(
-                        company.activites!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.accentColor,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentColor.withAlpha(20),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          company.activites!,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.accentColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                     if (company.members != null &&
@@ -175,17 +265,17 @@ class _CompanyCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.people_outline_rounded,
                             size: 13,
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.textSecondary.withAlpha(150),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${company.members!.length} membre${company.members!.length > 1 ? 's' : ''}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.textSecondary.withAlpha(180),
                             ),
                           ),
                         ],
@@ -194,9 +284,9 @@ class _CompanyCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondary.withAlpha(120),
               ),
             ],
           ),
