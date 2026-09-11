@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/member.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 
 const _kTokenKey = 'auth_token';
 const _kMemberKey = 'member_data';
@@ -45,8 +46,9 @@ class AuthProvider extends ChangeNotifier {
     final savedMember = prefs.getString(_kMemberKey);
     if (savedMember != null && savedMember.isNotEmpty) {
       try {
-        _currentMember =
-            Member.fromJson(jsonDecode(savedMember) as Map<String, dynamic>);
+        _currentMember = Member.fromJson(
+          jsonDecode(savedMember) as Map<String, dynamic>,
+        );
       } catch (_) {}
     }
     notifyListeners();
@@ -55,28 +57,46 @@ class AuthProvider extends ChangeNotifier {
     try {
       _currentMember = await _api.getProfile();
       await _saveMember(_currentMember);
+      await _registerPushToken();
+      NotificationService.handlePendingNavigation();
       notifyListeners();
+    } on ApiException catch (error) {
+      if (error.statusCode == 401) {
+        await _clearLocalSession();
+        notifyListeners();
+      }
     } catch (_) {
       // Keep cached data — don't clear session on network error
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(
+    String email,
+    String password, {
+    required bool acceptTerms,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
       final publicApi = const ApiService();
-      final data = await publicApi.login(email, password);
+      final data = await publicApi.login(
+        email,
+        password,
+        acceptTerms: acceptTerms,
+      );
       _token = data['token'] as String?;
       if (data['member'] != null) {
-        _currentMember =
-            Member.fromJson(data['member'] as Map<String, dynamic>);
+        _currentMember = Member.fromJson(
+          data['member'] as Map<String, dynamic>,
+        );
       }
       final prefs = await SharedPreferences.getInstance();
       if (_token != null) {
         await prefs.setString(_kTokenKey, _token!);
         await _saveMember(_currentMember);
+        await _registerPushToken();
+        NotificationService.handlePendingNavigation();
       }
       _isLoading = false;
       notifyListeners();
@@ -97,14 +117,13 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     if (_token != null) {
       try {
+        await NotificationService.deleteCurrentToken(_api);
+      } catch (_) {}
+      try {
         await _api.logout();
       } catch (_) {}
     }
-    _token = null;
-    _currentMember = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kTokenKey);
-    await prefs.remove(_kMemberKey);
+    await _clearLocalSession();
     notifyListeners();
   }
 
@@ -113,6 +132,7 @@ class AuthProvider extends ChangeNotifier {
     String? prenom,
     String? telephone,
     String? presentation,
+    String? photoPath,
   }) async {
     _isLoading = true;
     _error = null;
@@ -123,6 +143,7 @@ class AuthProvider extends ChangeNotifier {
         prenom: prenom,
         telephone: telephone,
         presentation: presentation,
+        photoPath: photoPath,
       );
       _currentMember = updated;
       await _saveMember(_currentMember);
@@ -177,8 +198,8 @@ class AuthProvider extends ChangeNotifier {
     String? sousTitre,
     String? activites,
     String? description,
-    String? logoUrl,
-    String? photoUrl,
+    String? logoPath,
+    String? photoPath,
   }) async {
     _isLoading = true;
     _error = null;
@@ -189,8 +210,8 @@ class AuthProvider extends ChangeNotifier {
         sousTitre: sousTitre,
         activites: activites,
         description: description,
-        logoUrl: logoUrl,
-        photoUrl: photoUrl,
+        logoPath: logoPath,
+        photoPath: photoPath,
       );
       if (_currentMember != null) {
         _currentMember = Member(
@@ -200,6 +221,7 @@ class AuthProvider extends ChangeNotifier {
           email: _currentMember!.email,
           telephone: _currentMember!.telephone,
           presentation: _currentMember!.presentation,
+          photoUrl: _currentMember!.photoUrl,
           companyId: _currentMember!.companyId,
           createdAt: _currentMember!.createdAt,
           updatedAt: _currentMember!.updatedAt,
@@ -226,5 +248,19 @@ class AuthProvider extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  Future<void> _registerPushToken() async {
+    try {
+      await NotificationService.requestPermissionAndRegister(_api);
+    } catch (_) {}
+  }
+
+  Future<void> _clearLocalSession() async {
+    _token = null;
+    _currentMember = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kTokenKey);
+    await prefs.remove(_kMemberKey);
   }
 }

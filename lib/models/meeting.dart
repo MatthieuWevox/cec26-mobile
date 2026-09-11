@@ -71,8 +71,8 @@ class Meeting {
       updatedAt: json['updated_at'] as String,
       guests: json['guests'] != null
           ? (json['guests'] as List)
-              .map((g) => Guest.fromJson(g as Map<String, dynamic>))
-              .toList()
+                .map((g) => Guest.fromJson(g as Map<String, dynamic>))
+                .toList()
           : [],
     );
   }

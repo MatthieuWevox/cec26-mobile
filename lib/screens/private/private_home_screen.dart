@@ -5,6 +5,7 @@ import '../../models/member.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../legal_information_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
 import 'recommendations_screen.dart';
@@ -16,259 +17,150 @@ class PrivateHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-
-    if (!auth.isLoggedIn) {
-      return const LoginScreen();
-    }
-
-    return const _MemberDashboard();
+    return auth.isLoggedIn ? const _MemberDashboard() : const LoginScreen();
   }
 }
 
 class _MemberDashboard extends StatelessWidget {
   const _MemberDashboard();
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final member = auth.currentMember;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: _buildProfileHeader(context, auth, member)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-            const SizedBox(height: 8),
-
-            // Quick access
-            const SectionHeader(title: 'Mes actions'),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.3,
-                children: [
-                  _ActionTile(
-                    icon: Icons.thumb_up_outlined,
-                    label: 'Recommandations',
-                    subtitle: 'Reçues & envoyées',
-                    color: AppTheme.primaryColor,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const RecommendationsScreen(),
-                      ),
-                    ),
-                  ),
-                  _ActionTile(
-                    icon: Icons.handshake_outlined,
-                    label: 'Remerciements',
-                    subtitle: 'Reçus & envoyés',
-                    color: AppTheme.accentColor,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ThanksScreen(),
-                      ),
-                    ),
-                  ),
-                  _ActionTile(
-                    icon: Icons.person_outline_rounded,
-                    label: 'Mon profil',
-                    subtitle: 'Modifier mes infos',
-                    color: const Color(0xFF8B5CF6),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(),
-                      ),
-                    ),
-                  ),
-                  _ActionTile(
-                    icon: Icons.business_outlined,
-                    label: 'Mon entreprise',
-                    subtitle: "Modifier l'entreprise",
-                    color: const Color(0xFFEA580C),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(
-                          initialTab: ProfileTab.company,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Member info summary
-            if (member != null) ...[
-              const SectionHeader(title: 'Mes informations'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: AppTheme.cardShadow,
-                  ),
-                  child: Column(
-                    children: [
-                      InfoRow(
-                        icon: Icons.person_rounded,
-                        label: 'NOM COMPLET',
-                        value: member.fullName,
-                      ),
-                      const Divider(),
-                      InfoRow(
-                        icon: Icons.email_outlined,
-                        label: 'EMAIL',
-                        value: member.email,
-                      ),
-                      if (member.telephone != null &&
-                          member.telephone!.isNotEmpty) ...[
-                        const Divider(),
-                        InfoRow(
-                          icon: Icons.phone_outlined,
-                          label: 'TÉLÉPHONE',
-                          value: member.telephone!,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-              ),
+      body: Column(
+        children: [
+          CecPageHeader(
+            eyebrow: 'Espace membre',
+            title: 'Bonjour, ${member?.prenom ?? 'membre'}',
+            subtitle:
+                member?.company?.nom ?? 'Club des Entrepreneurs du Cotentin',
+            icon: Icons.verified_user_outlined,
+            trailing: MemberAvatar(
+              imageUrl: member?.photoUrl,
+              name: member?.fullName ?? 'Membre CEC',
+              radius: 25,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader(BuildContext context, AuthProvider auth, Member? member) {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 20,
-        left: 24,
-        right: 24,
-        bottom: 28,
-      ),
-      decoration: const BoxDecoration(
-        gradient: AppTheme.headerGradient,
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(28),
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Bonjour 👋',
-                      style: TextStyle(
-                        color: Colors.white.withAlpha(180),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      member?.prenom ?? '',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    if (member?.company != null) ...[
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 28),
+              children: [
+                const SectionHeader(
+                  title: 'Échanges',
+                  subtitle: 'Suivez et développez les relations du réseau.',
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      _PrimaryAction(
+                        icon: Icons.recommend_outlined,
+                        title: 'Recommandations',
+                        subtitle:
+                            'Consulter les reçues, les envoyées ou en créer une',
+                        accent: AppTheme.primaryColor,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RecommendationsScreen(),
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(20),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          member!.company!.nom,
-                          style: TextStyle(
-                            color: Colors.white.withAlpha(220),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                      ),
+                      const SizedBox(height: 10),
+                      _PrimaryAction(
+                        icon: Icons.handshake_outlined,
+                        title: 'Remerciements',
+                        subtitle:
+                            'Valoriser une affaire réalisée grâce au réseau',
+                        accent: AppTheme.accentDark,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ThanksScreen(),
                           ),
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              MemberAvatar(
-                name: member?.prenom ?? 'Membre',
-                radius: 32,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const Spacer(),
-              GestureDetector(
-                onTap: () => _confirmLogout(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(20),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                const SectionHeader(
+                  title: 'Mon compte',
+                  subtitle: 'Gardez vos informations à jour.',
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.logout_rounded,
-                        size: 16,
-                        color: Colors.white.withAlpha(200),
+                      Expanded(
+                        child: _AccountAction(
+                          icon: Icons.person_outline_rounded,
+                          label: 'Mon profil',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
+                            ),
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Déconnexion',
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(200),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _AccountAction(
+                          icon: Icons.apartment_outlined,
+                          label: 'Mon entreprise',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(
+                                initialTab: ProfileTab.company,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                if (member != null) ...[
+                  const SectionHeader(
+                    title: 'Profil',
+                    subtitle:
+                        'Un profil complet facilite les mises en relation.',
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _ProfileSummary(member: member),
+                  ),
+                ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LegalInformationScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.info_outline_rounded),
+                    label: const Text('À propos, confidentialité et aide'),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmLogout(context),
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text('Se déconnecter'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.errorColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -276,101 +168,200 @@ class _MemberDashboard extends StatelessWidget {
   }
 
   Future<void> _confirmLogout(BuildContext context) async {
-    final confirm = await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Déconnexion'),
-        content: const Text('Voulez-vous vraiment vous déconnecter ?'),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Se déconnecter ?'),
+        content: const Text(
+          'Vous devrez saisir à nouveau vos identifiants pour accéder à votre espace.',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Annuler'),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            icon: const Icon(Icons.logout_rounded, size: 18),
+            label: const Text('Se déconnecter'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.errorColor,
             ),
-            child: const Text('Déconnexion'),
           ),
         ],
       ),
     );
-    if (confirm == true && context.mounted) {
+
+    if (confirmed == true && context.mounted) {
       await context.read<AuthProvider>().logout();
     }
   }
 }
 
-class _ActionTile extends StatelessWidget {
+class _PrimaryAction extends StatelessWidget {
   final IconData icon;
-  final String label;
+  final String title;
   final String subtitle;
-  final Color color;
+  final Color accent;
   final VoidCallback onTap;
 
-  const _ActionTile({
+  const _PrimaryAction({
     required this.icon,
-    required this.label,
+    required this.title,
     required this.subtitle,
-    required this.color,
+    required this.accent,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: AppTheme.cardShadow,
-            color: Colors.white,
+    return CecSurface(
+      onTap: onTap,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: accent.withAlpha(20),
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+            ),
+            child: Icon(icon, color: accent, size: 23),
           ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [color.withAlpha(30), color.withAlpha(15)],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                child: Icon(icon, color: color, size: 22),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Icon(
+            Icons.arrow_forward_rounded,
+            color: AppTheme.primaryColor,
+            size: 19,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _AccountAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CecSurface(
+      onTap: onTap,
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.accentDark, size: 24),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: AppTheme.primaryColor,
+                size: 17,
               ),
             ],
           ),
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileSummary extends StatelessWidget {
+  final Member member;
+
+  const _ProfileSummary({required this.member});
+
+  @override
+  Widget build(BuildContext context) {
+    final completed = [
+      member.nom.isNotEmpty,
+      member.prenom.isNotEmpty,
+      member.email.isNotEmpty,
+      member.telephone?.isNotEmpty ?? false,
+      member.presentation?.isNotEmpty ?? false,
+      member.photoUrl?.isNotEmpty ?? false,
+      member.company != null,
+    ].where((value) => value).length;
+    final progress = completed / 7;
+
+    return CecSurface(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Profil complété à ${(progress * 100).round()} %',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              const CecBadge(
+                label: 'VISIBLE',
+                color: AppTheme.successColor,
+                icon: Icons.visibility_outlined,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: AppTheme.surfaceMuted,
+              valueColor: const AlwaysStoppedAnimation(AppTheme.accentColor),
+            ),
+          ),
+          const SizedBox(height: 14),
+          InfoRow(
+            icon: Icons.email_outlined,
+            label: 'Email',
+            value: member.email,
+          ),
+          if (member.telephone?.isNotEmpty ?? false) ...[
+            const Divider(),
+            InfoRow(
+              icon: Icons.phone_outlined,
+              label: 'Téléphone',
+              value: member.telephone!,
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -6,6 +6,8 @@ import '../../models/member.dart';
 import '../../models/recommendation.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/content_visibility_service.dart';
+import '../../services/reporting_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common_widgets.dart';
 
@@ -38,8 +40,22 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
   void _load() {
     final token = context.read<AuthProvider>().token!;
     final api = ApiService(authToken: token);
-    _received = api.getRecommendationsReceived();
-    _sent = api.getRecommendationsSent();
+    _received = _visibleRecommendations(api.getRecommendationsReceived());
+    _sent = _visibleRecommendations(api.getRecommendationsSent());
+  }
+
+  Future<List<Recommendation>> _visibleRecommendations(
+    Future<List<Recommendation>> request,
+  ) async {
+    final results = await Future.wait([
+      request,
+      ContentVisibilityService.hiddenIds('recommendation'),
+    ]);
+    final recommendations = results[0] as List<Recommendation>;
+    final hiddenIds = results[1] as Set<int>;
+    return recommendations
+        .where((item) => !hiddenIds.contains(item.id))
+        .toList();
   }
 
   @override
@@ -49,9 +65,6 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
         title: const Text('Recommandations'),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppTheme.accentColor,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
           tabs: const [
             Tab(icon: Icon(Icons.inbox_rounded), text: 'Reçues'),
             Tab(icon: Icon(Icons.send_rounded), text: 'Envoyées'),
@@ -61,18 +74,22 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _RecommendationList(future: _received, isReceived: true),
-          _RecommendationList(future: _sent, isReceived: false),
+          _RecommendationList(
+            future: _received,
+            isReceived: true,
+            onHidden: () => setState(_load),
+          ),
+          _RecommendationList(
+            future: _sent,
+            isReceived: false,
+            onHidden: () => setState(_load),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateDialog(context),
-        backgroundColor: AppTheme.primaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Nouvelle recommandation',
-          style: TextStyle(color: Colors.white),
-        ),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Nouvelle recommandation'),
       ),
     );
   }
@@ -82,9 +99,8 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => CreateRecommendationSheet(
-        onCreated: () => setState(() => _load()),
-      ),
+      builder: (ctx) =>
+          CreateRecommendationSheet(onCreated: () => setState(() => _load())),
     );
   }
 }
@@ -92,10 +108,12 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
 class _RecommendationList extends StatelessWidget {
   final Future<List<Recommendation>> future;
   final bool isReceived;
+  final VoidCallback onHidden;
 
   const _RecommendationList({
     required this.future,
     required this.isReceived,
+    required this.onHidden,
   });
 
   @override
@@ -118,11 +136,15 @@ class _RecommendationList extends StatelessWidget {
             icon: Icons.thumb_up_outlined,
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 100),
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           itemCount: items.length,
-          itemBuilder: (context, index) =>
-              _RecommendationCard(rec: items[index], isReceived: isReceived),
+          itemBuilder: (context, index) => _RecommendationCard(
+            rec: items[index],
+            isReceived: isReceived,
+            onHidden: onHidden,
+          ),
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
         );
       },
     );
@@ -132,8 +154,25 @@ class _RecommendationList extends StatelessWidget {
 class _RecommendationCard extends StatelessWidget {
   final Recommendation rec;
   final bool isReceived;
+  final VoidCallback onHidden;
 
-  const _RecommendationCard({required this.rec, required this.isReceived});
+  const _RecommendationCard({
+    required this.rec,
+    required this.isReceived,
+    required this.onHidden,
+  });
+
+  Future<void> _report(BuildContext context) async {
+    final hidden = await ReportingService.reportContent(
+      context,
+      contentType: 'recommendation',
+      contentId: rec.id,
+      contentName:
+          'Recommandation de ${rec.recommandateur?.fullName ?? 'membre'}',
+      authToken: context.read<AuthProvider>().token,
+    );
+    if (hidden) onHidden();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,128 +183,88 @@ class _RecommendationCard extends StatelessWidget {
 
     final otherMember = isReceived ? rec.recommandateur : rec.recommande;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withAlpha(15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.person_pin_rounded,
-                    color: AppTheme.primaryColor,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        rec.contactFullName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (rec.email != null && rec.email!.isNotEmpty)
-                        Text(
-                          rec.email!,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Text(
-                  dateStr,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-            if (rec.telephone != null && rec.telephone!.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.phone_outlined,
-                    size: 14,
-                    color: AppTheme.textSecondary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    rec.telephone!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (rec.description != null && rec.description!.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              const Divider(),
-              const SizedBox(height: 8),
-              Text(
-                rec.description!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.textPrimary,
-                  height: 1.5,
-                ),
-              ),
-            ],
-            if (otherMember != null) ...[
-              const SizedBox(height: 12),
+    return CecSurface(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: AppTheme.accentColor.withAlpha(20),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppTheme.accentSoft,
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: const Icon(
+                  Icons.person_pin_outlined,
+                  color: AppTheme.primaryColor,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      isReceived
-                          ? Icons.person_outline_rounded
-                          : Icons.send_rounded,
-                      size: 14,
-                      color: AppTheme.accentColor,
-                    ),
-                    const SizedBox(width: 6),
                     Text(
-                      '${isReceived ? 'De' : 'À'}: ${otherMember.fullName}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      rec.contactFullName,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
+                    if (rec.email?.isNotEmpty ?? false)
+                      Text(
+                        rec.email!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(dateStr, style: Theme.of(context).textTheme.bodySmall),
+                  if (isReceived)
+                    Tooltip(
+                      message: 'Signaler cette recommandation',
+                      child: IconButton(
+                        onPressed: () => _report(context),
+                        icon: const Icon(Icons.flag_outlined),
+                        iconSize: 18,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                ],
+              ),
             ],
+          ),
+          if (rec.telephone?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 11),
+            CecMeta(icon: Icons.phone_outlined, text: rec.telephone!),
           ],
-        ),
+          if (rec.description?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 11),
+            Text(
+              rec.description!,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+          if (otherMember != null) ...[
+            const SizedBox(height: 13),
+            CecBadge(
+              label: '${isReceived ? 'DE' : 'À'} ${otherMember.fullName}',
+              color: AppTheme.accentDark,
+              icon: isReceived
+                  ? Icons.person_outline_rounded
+                  : Icons.send_rounded,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -280,8 +279,7 @@ class CreateRecommendationSheet extends StatefulWidget {
       _CreateRecommendationSheetState();
 }
 
-class _CreateRecommendationSheetState
-    extends State<CreateRecommendationSheet> {
+class _CreateRecommendationSheetState extends State<CreateRecommendationSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nomCtrl = TextEditingController();
   final _prenomCtrl = TextEditingController();
@@ -312,6 +310,7 @@ class _CreateRecommendationSheetState
   Future<void> _loadMembers() async {
     try {
       final list = await const ApiService().getMembers();
+      if (!mounted) return;
       final myId = context.read<AuthProvider>().currentMember?.id;
       setState(() {
         _members = list.where((m) => m.id != myId).toList();
@@ -375,7 +374,9 @@ class _CreateRecommendationSheetState
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radius),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
         child: Form(
@@ -416,7 +417,7 @@ class _CreateRecommendationSheetState
                   const Center(child: CircularProgressIndicator())
                 else
                   DropdownButtonFormField<Member>(
-                    value: _selectedMember,
+                    initialValue: _selectedMember,
                     decoration: const InputDecoration(
                       hintText: 'Sélectionner un membre',
                       prefixIcon: Icon(Icons.person_rounded),

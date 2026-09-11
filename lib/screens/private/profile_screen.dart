@@ -1,8 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/common_widgets.dart';
+
+class _PickedMedia {
+  final String path;
+  final String name;
+
+  const _PickedMedia({required this.path, required this.name});
+}
+
+Future<_PickedMedia?> _pickFromGallery() async {
+  final picked = await ImagePicker().pickImage(
+    source: ImageSource.gallery,
+    imageQuality: 88,
+  );
+  if (picked == null) return null;
+  return _PickedMedia(path: picked.path, name: picked.name);
+}
+
+Future<_PickedMedia?> _pickFromFiles() async {
+  final result = await FilePicker.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+    allowMultiple: false,
+  );
+  final file = result?.files.single;
+  if (file == null || file.path == null) return null;
+  return _PickedMedia(path: file.path!, name: file.name);
+}
 
 enum ProfileTab { profile, company, password }
 
@@ -41,9 +71,6 @@ class _ProfileScreenState extends State<ProfileScreen>
         title: const Text('Mon profil'),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppTheme.accentColor,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
           tabs: const [
             Tab(icon: Icon(Icons.person_outline_rounded), text: 'Profil'),
             Tab(icon: Icon(Icons.business_outlined), text: 'Entreprise'),
@@ -78,6 +105,7 @@ class _EditProfileTabState extends State<_EditProfileTab> {
   late TextEditingController _prenomCtrl;
   late TextEditingController _telCtrl;
   late TextEditingController _presentationCtrl;
+  _PickedMedia? _photo;
   bool _initialized = false;
 
   @override
@@ -106,15 +134,13 @@ class _EditProfileTabState extends State<_EditProfileTab> {
       prenom: _prenomCtrl.text.trim(),
       telephone: _telCtrl.text.trim(),
       presentation: _presentationCtrl.text.trim(),
+      photoPath: _photo?.path,
     );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            ok ? 'Profil mis à jour.' : auth.error ?? 'Erreur.',
-          ),
-          backgroundColor:
-              ok ? AppTheme.successColor : AppTheme.errorColor,
+          content: Text(ok ? 'Profil mis à jour.' : auth.error ?? 'Erreur.'),
+          backgroundColor: ok ? AppTheme.successColor : AppTheme.errorColor,
         ),
       );
     }
@@ -130,7 +156,12 @@ class _EditProfileTabState extends State<_EditProfileTab> {
       child: Form(
         key: _formKey,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SectionHeader(
+              title: 'Informations personnelles',
+              subtitle: 'Ces informations apparaissent dans l’annuaire.',
+            ),
             TextFormField(
               controller: _prenomCtrl,
               textCapitalization: TextCapitalization.words,
@@ -172,6 +203,24 @@ class _EditProfileTabState extends State<_EditProfileTab> {
                 alignLabelWithHint: true,
               ),
             ),
+            const SizedBox(height: 12),
+            _MediaPickerTile(
+              title: 'Photo de profil',
+              currentUrl: auth.currentMember?.photoUrl,
+              selectedName: _photo?.name,
+              icon: Icons.account_circle_outlined,
+              onGallery: () async {
+                final media = await _pickFromGallery();
+                if (media != null && mounted) setState(() => _photo = media);
+              },
+              onFiles: () async {
+                final media = await _pickFromFiles();
+                if (media != null && mounted) setState(() => _photo = media);
+              },
+              onClearSelection: _photo == null
+                  ? null
+                  : () => setState(() => _photo = null),
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -205,14 +254,124 @@ class _EditCompanyTab extends StatefulWidget {
   State<_EditCompanyTab> createState() => _EditCompanyTabState();
 }
 
+class _MediaPickerTile extends StatelessWidget {
+  final String title;
+  final String? currentUrl;
+  final String? selectedName;
+  final IconData icon;
+  final VoidCallback onGallery;
+  final VoidCallback onFiles;
+  final VoidCallback? onClearSelection;
+
+  const _MediaPickerTile({
+    required this.title,
+    required this.currentUrl,
+    required this.selectedName,
+    required this.icon,
+    required this.onGallery,
+    required this.onFiles,
+    required this.onClearSelection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCurrent = currentUrl != null && currentUrl!.isNotEmpty;
+    final hasSelection = selectedName != null && selectedName!.isNotEmpty;
+
+    return CecSurface(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppTheme.accentColor),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (hasCurrent || hasSelection) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (hasCurrent)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
+                    child: Image.network(
+                      currentUrl!,
+                      width: 58,
+                      height: 58,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 58,
+                        height: 58,
+                        color: AppTheme.backgroundLight,
+                        child: const Icon(Icons.broken_image_outlined),
+                      ),
+                    ),
+                  ),
+                if (hasCurrent) const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    hasSelection ? selectedName! : 'Media actuel',
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 13,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (onClearSelection != null)
+                  IconButton(
+                    onPressed: onClearSelection,
+                    icon: const Icon(Icons.close_rounded),
+                    tooltip: 'Annuler la selection',
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onGallery,
+                  icon: const Icon(Icons.photo_library_outlined),
+                  label: const Text('Galerie'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onFiles,
+                  icon: const Icon(Icons.folder_open_outlined),
+                  label: const Text('Fichiers'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EditCompanyTabState extends State<_EditCompanyTab> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nomCtrl;
   late TextEditingController _sousTitreCtrl;
   late TextEditingController _activitesCtrl;
   late TextEditingController _descriptionCtrl;
-  late TextEditingController _logoUrlCtrl;
-  late TextEditingController _photoUrlCtrl;
+  _PickedMedia? _logo;
+  _PickedMedia? _banner;
   bool _initialized = false;
 
   @override
@@ -221,8 +380,6 @@ class _EditCompanyTabState extends State<_EditCompanyTab> {
     _sousTitreCtrl.dispose();
     _activitesCtrl.dispose();
     _descriptionCtrl.dispose();
-    _logoUrlCtrl.dispose();
-    _photoUrlCtrl.dispose();
     super.dispose();
   }
 
@@ -233,8 +390,6 @@ class _EditCompanyTabState extends State<_EditCompanyTab> {
     _sousTitreCtrl = TextEditingController(text: c?.sousTitre ?? '');
     _activitesCtrl = TextEditingController(text: c?.activites ?? '');
     _descriptionCtrl = TextEditingController(text: c?.description ?? '');
-    _logoUrlCtrl = TextEditingController(text: c?.logoUrl ?? '');
-    _photoUrlCtrl = TextEditingController(text: c?.photoUrl ?? '');
     _initialized = true;
   }
 
@@ -245,8 +400,8 @@ class _EditCompanyTabState extends State<_EditCompanyTab> {
       sousTitre: _sousTitreCtrl.text.trim(),
       activites: _activitesCtrl.text.trim(),
       description: _descriptionCtrl.text.trim(),
-      logoUrl: _logoUrlCtrl.text.trim(),
-      photoUrl: _photoUrlCtrl.text.trim(),
+      logoPath: _logo?.path,
+      photoPath: _banner?.path,
     );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -254,8 +409,7 @@ class _EditCompanyTabState extends State<_EditCompanyTab> {
           content: Text(
             ok ? 'Entreprise mise à jour.' : auth.error ?? 'Erreur.',
           ),
-          backgroundColor:
-              ok ? AppTheme.successColor : AppTheme.errorColor,
+          backgroundColor: ok ? AppTheme.successColor : AppTheme.errorColor,
         ),
       );
     }
@@ -284,7 +438,12 @@ class _EditCompanyTabState extends State<_EditCompanyTab> {
       child: Form(
         key: _formKey,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SectionHeader(
+              title: 'Identité de l’entreprise',
+              subtitle: 'Présentez clairement votre activité aux membres.',
+            ),
             TextFormField(
               controller: _nomCtrl,
               textCapitalization: TextCapitalization.words,
@@ -323,22 +482,40 @@ class _EditCompanyTabState extends State<_EditCompanyTab> {
               ),
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _logoUrlCtrl,
-              keyboardType: TextInputType.url,
-              decoration: const InputDecoration(
-                labelText: 'URL du logo',
-                prefixIcon: Icon(Icons.image_outlined),
-              ),
+            _MediaPickerTile(
+              title: 'Logo',
+              currentUrl: auth.currentMember?.company?.logoUrl,
+              selectedName: _logo?.name,
+              icon: Icons.image_outlined,
+              onGallery: () async {
+                final media = await _pickFromGallery();
+                if (media != null && mounted) setState(() => _logo = media);
+              },
+              onFiles: () async {
+                final media = await _pickFromFiles();
+                if (media != null && mounted) setState(() => _logo = media);
+              },
+              onClearSelection: _logo == null
+                  ? null
+                  : () => setState(() => _logo = null),
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _photoUrlCtrl,
-              keyboardType: TextInputType.url,
-              decoration: const InputDecoration(
-                labelText: 'URL de la photo',
-                prefixIcon: Icon(Icons.photo_outlined),
-              ),
+            _MediaPickerTile(
+              title: 'Banniere / photo',
+              currentUrl: auth.currentMember?.company?.photoUrl,
+              selectedName: _banner?.name,
+              icon: Icons.photo_outlined,
+              onGallery: () async {
+                final media = await _pickFromGallery();
+                if (media != null && mounted) setState(() => _banner = media);
+              },
+              onFiles: () async {
+                final media = await _pickFromFiles();
+                if (media != null && mounted) setState(() => _banner = media);
+              },
+              onClearSelection: _banner == null
+                  ? null
+                  : () => setState(() => _banner = null),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -400,11 +577,8 @@ class _ChangePasswordTabState extends State<_ChangePasswordTab> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            ok ? 'Mot de passe modifié.' : auth.error ?? 'Erreur.',
-          ),
-          backgroundColor:
-              ok ? AppTheme.successColor : AppTheme.errorColor,
+          content: Text(ok ? 'Mot de passe modifié.' : auth.error ?? 'Erreur.'),
+          backgroundColor: ok ? AppTheme.successColor : AppTheme.errorColor,
         ),
       );
       if (ok) {
@@ -424,7 +598,13 @@ class _ChangePasswordTabState extends State<_ChangePasswordTab> {
       child: Form(
         key: _formKey,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SectionHeader(
+              title: 'Sécurité du compte',
+              subtitle:
+                  'Utilisez au moins 8 caractères pour votre mot de passe.',
+            ),
             TextFormField(
               controller: _currentCtrl,
               obscureText: _obscureCurrent,
@@ -441,8 +621,7 @@ class _ChangePasswordTabState extends State<_ChangePasswordTab> {
                       setState(() => _obscureCurrent = !_obscureCurrent),
                 ),
               ),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Requis' : null,
+              validator: (v) => (v == null || v.isEmpty) ? 'Requis' : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -457,8 +636,7 @@ class _ChangePasswordTabState extends State<_ChangePasswordTab> {
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
                   ),
-                  onPressed: () =>
-                      setState(() => _obscureNew = !_obscureNew),
+                  onPressed: () => setState(() => _obscureNew = !_obscureNew),
                 ),
               ),
               validator: (v) {

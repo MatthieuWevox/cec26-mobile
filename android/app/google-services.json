@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "39396459769",
+    "project_id": "cec-2026",
+    "storage_bucket": "cec-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:39396459769:android:0e3ec0e4d325fcd3d70e28",
+        "android_client_info": {
+          "package_name": "cloud.wevox.cec2026.cec2026"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZeI7XzYOlD1Nr4c1K8bIkfFto8zZQMhs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -27,324 +27,246 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
     _future = const ApiService().getMeetings();
   }
 
+  Future<void> _refresh() async {
+    setState(_load);
+    await _future;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<List<Meeting>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CecLoadingWidget(message: 'Chargement des réunions…');
-          }
-          if (snapshot.hasError) {
-            return CecErrorWidget(
-              message: snapshot.error.toString(),
-              onRetry: () => setState(() => _load()),
-            );
-          }
-          final items = snapshot.data ?? [];
-          if (items.isEmpty) {
-            return const CecEmptyWidget(
-              message: 'Aucune réunion disponible.',
-              icon: Icons.event_rounded,
-            );
-          }
-          return RefreshIndicator(
-            color: AppTheme.accentColor,
-            onRefresh: () async => setState(() => _load()),
-            child: CustomScrollView(
-              slivers: [
-                _buildHeader(),
-                SliverPadding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 24),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) =>
-                          _MeetingCard(meeting: items[index]),
-                      childCount: items.length,
-                    ),
+      body: Column(
+        children: [
+          const CecPageHeader(
+            eyebrow: 'Agenda du réseau',
+            title: 'Réunions',
+            subtitle:
+                'Préparez vos prochains rendez-vous et retrouvez les archives.',
+            icon: Icons.calendar_month_rounded,
+          ),
+          Expanded(
+            child: FutureBuilder<List<Meeting>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CecLoadingWidget(
+                    message: 'Chargement des réunions...',
+                  );
+                }
+                if (snapshot.hasError) {
+                  return CecErrorWidget(
+                    message: snapshot.error.toString(),
+                    onRetry: () => setState(_load),
+                  );
+                }
+
+                final now = DateTime.now();
+                final all = snapshot.data ?? [];
+                final upcoming = all.where((meeting) {
+                  final date = DateTime.tryParse(meeting.date);
+                  return date != null &&
+                      date.isAfter(DateTime(now.year, now.month, now.day - 1));
+                }).toList()..sort((a, b) => a.date.compareTo(b.date));
+                final past = all.where((meeting) {
+                  final date = DateTime.tryParse(meeting.date);
+                  return date == null ||
+                      date.isBefore(DateTime(now.year, now.month, now.day));
+                }).toList()..sort((a, b) => b.date.compareTo(a.date));
+
+                if (all.isEmpty) {
+                  return const CecEmptyWidget(
+                    message: 'Aucune réunion planifiée pour le moment.',
+                    icon: Icons.event_busy_rounded,
+                  );
+                }
+
+                return RefreshIndicator(
+                  color: AppTheme.primaryColor,
+                  onRefresh: _refresh,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+                    children: [
+                      if (upcoming.isNotEmpty) ...[
+                        _SectionLabel(
+                          title: 'Prochains rendez-vous',
+                          count: upcoming.length,
+                          highlighted: true,
+                        ),
+                        const SizedBox(height: 10),
+                        for (final meeting in upcoming) ...[
+                          _MeetingCard(meeting: meeting, isUpcoming: true),
+                          const SizedBox(height: 12),
+                        ],
+                      ],
+                      if (past.isNotEmpty) ...[
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: upcoming.isEmpty ? 0 : 14,
+                          ),
+                          child: _SectionLabel(
+                            title: 'Réunions passées',
+                            count: past.length,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        for (final meeting in past) ...[
+                          _MeetingCard(meeting: meeting, isUpcoming: false),
+                          const SizedBox(height: 12),
+                        ],
+                      ],
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildHeader() {
-    return SliverToBoxAdapter(
-      child: Container(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 20,
-          left: 24,
-          right: 24,
-          bottom: 24,
+class _SectionLabel extends StatelessWidget {
+  final String title;
+  final int count;
+  final bool highlighted;
+
+  const _SectionLabel({
+    required this.title,
+    required this.count,
+    this.highlighted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
         ),
-        decoration: const BoxDecoration(
-          gradient: AppTheme.headerGradient,
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(28),
-          ),
+        CecBadge(
+          label: count.toString(),
+          color: highlighted ? AppTheme.accentDark : AppTheme.textSecondary,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(25),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.event_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                const Text(
-                  'Réunions',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Calendrier des prochaines rencontres',
-              style: TextStyle(
-                color: Colors.white.withAlpha(180),
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }
 
 class _MeetingCard extends StatelessWidget {
   final Meeting meeting;
-  const _MeetingCard({required this.meeting});
+  final bool isUpcoming;
+
+  const _MeetingCard({required this.meeting, required this.isUpcoming});
 
   @override
   Widget build(BuildContext context) {
     final date = DateTime.tryParse(meeting.date);
-    final isUpcoming = date != null && date.isAfter(DateTime.now());
+    final day = date == null ? '--' : DateFormat('dd', 'fr_FR').format(date);
+    final month = date == null
+        ? ''
+        : DateFormat(
+            'MMM',
+            'fr_FR',
+          ).format(date).replaceAll('.', '').toUpperCase();
+    final time = meeting.heure.length >= 5
+        ? '${meeting.heure.substring(0, 2)}h${meeting.heure.substring(3, 5)}'
+        : meeting.heure;
 
-    String dayStr = '';
-    String monthStr = '';
-    String yearStr = '';
-    String timeStr = '';
-
-    if (date != null) {
-      dayStr = DateFormat('d', 'fr_FR').format(date);
-      monthStr = DateFormat('MMM', 'fr_FR').format(date).toUpperCase();
-      yearStr = DateFormat('yyyy').format(date);
-    }
-
-    final timeParts = meeting.heure.split(':');
-    if (timeParts.length >= 2) {
-      timeStr = '${timeParts[0]}h${timeParts[1]}';
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow,
+    return CecSurface(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MeetingDetailScreen(meeting: meeting),
+        ),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MeetingDetailScreen(meeting: meeting),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Date badge with gradient
-              Container(
-                width: 64,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: isUpcoming
-                      ? AppTheme.primaryGradient
-                      : null,
-                  color: isUpcoming
-                      ? null
-                      : AppTheme.primaryColor.withAlpha(15),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      dayStr,
-                      style: TextStyle(
-                        color: isUpcoming ? Colors.white : AppTheme.primaryColor,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        height: 1,
-                      ),
+      padding: EdgeInsets.zero,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 78,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 17),
+              color: isUpcoming ? AppTheme.primaryColor : AppTheme.surfaceMuted,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    day,
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      color: isUpcoming ? Colors.white : AppTheme.primaryColor,
+                      fontSize: 27,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      monthStr,
-                      style: TextStyle(
-                        color: isUpcoming
-                            ? Colors.white.withAlpha(220)
-                            : AppTheme.primaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                      ),
+                  ),
+                  Text(
+                    month,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: isUpcoming
+                          ? AppTheme.accentColor
+                          : AppTheme.textSecondary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.7,
                     ),
-                    Text(
-                      yearStr,
-                      style: TextStyle(
-                        color: isUpcoming
-                            ? Colors.white.withAlpha(180)
-                            : AppTheme.textSecondary,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              Expanded(
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (isUpcoming)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.accentGradient,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'À VENIR',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.accentColor.withAlpha(20),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.access_time_rounded,
-                            size: 14,
-                            color: AppTheme.accentColor,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          timeStr,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withAlpha(15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.location_on_rounded,
-                            size: 14,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            meeting.adresse,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textSecondary,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          child: CecMeta(
+                            icon: Icons.schedule_rounded,
+                            text: time,
+                            color: isUpcoming
+                                ? AppTheme.accentDark
+                                : AppTheme.textSecondary,
                           ),
+                        ),
+                        if (isUpcoming)
+                          const CecBadge(
+                            label: 'À VENIR',
+                            color: AppTheme.successColor,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 11),
+                    Text(
+                      meeting.adresse,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CecMeta(
+                            icon: Icons.people_outline_rounded,
+                            text:
+                                '${meeting.guests.length} invité${meeting.guests.length > 1 ? 's' : ''}',
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 18,
+                          color: AppTheme.primaryColor,
                         ),
                       ],
                     ),
-                    if (meeting.guests.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentColor.withAlpha(15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.people_outline_rounded,
-                              size: 14,
-                              color: AppTheme.accentColor,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${meeting.guests.length} invité${meeting.guests.length > 1 ? 's' : ''}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: AppTheme.textSecondary.withAlpha(120),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -58,6 +58,40 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  Future<dynamic> _multipartPost(
+    String url, {
+    Map<String, String> fields = const {},
+    Map<String, String> files = const {},
+  }) async {
+    final request = http.MultipartRequest('POST', Uri.parse(url));
+    request.headers.addAll({
+      'Accept': 'application/json',
+      if (_authToken != null) 'Authorization': 'Bearer $_authToken',
+    });
+    request.fields.addAll(fields);
+
+    for (final entry in files.entries) {
+      if (entry.value.isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath(entry.key, entry.value),
+        );
+      }
+    }
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    return _handleResponse(response);
+  }
+
+  Future<dynamic> _delete(String url, Map<String, dynamic> body) async {
+    final response = await http.delete(
+      Uri.parse(url),
+      headers: _headers,
+      body: jsonEncode(body),
+    );
+    return _handleResponse(response);
+  }
+
   dynamic _handleResponse(http.Response response) {
     final body = utf8.decode(response.bodyBytes);
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -79,10 +113,15 @@ class ApiService {
 
   // ─── Authentication ────────────────────────────────────────────────────────
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(
+    String email,
+    String password, {
+    required bool acceptTerms,
+  }) async {
     final data = await _post(ApiConfig.login, {
       'email': email,
       'password': password,
+      'accept_terms': acceptTerms,
     });
     return data as Map<String, dynamic>;
   }
@@ -91,11 +130,58 @@ class ApiService {
     await _post(ApiConfig.logout, {});
   }
 
+  Future<void> registerPushToken({
+    required String token,
+    required String platform,
+    required String deviceId,
+  }) async {
+    await _post(ApiConfig.pushTokens, {
+      'token': token,
+      'platform': platform,
+      'device_id': deviceId,
+    });
+  }
+
+  Future<void> deletePushToken({required String token}) async {
+    await _delete(ApiConfig.pushTokens, {'token': token});
+  }
+
+  Future<Set<int>> getBlockedMemberIds() async {
+    final data = await _get(ApiConfig.blockedMembers) as Map<String, dynamic>;
+    return (data['member_ids'] as List<dynamic>? ?? const [])
+        .map((id) => (id as num).toInt())
+        .toSet();
+  }
+
+  Future<void> blockMember(int memberId) async {
+    await _post(ApiConfig.blockedMembers, {'member_id': memberId});
+  }
+
+  Future<void> unblockMember(int memberId) async {
+    await _delete(ApiConfig.blockedMember(memberId), {});
+  }
+
+  Future<void> createContentReport({
+    required String contentType,
+    required int contentId,
+    required String reason,
+    String? details,
+  }) async {
+    await _post(ApiConfig.reports, {
+      'content_type': contentType,
+      'content_id': contentId,
+      'reason': reason,
+      if (details != null && details.isNotEmpty) 'details': details,
+    });
+  }
+
   // ─── Public routes ─────────────────────────────────────────────────────────
 
   Future<List<News>> getNews() async {
     final data = await _get(ApiConfig.news);
-    return (data as List).map((e) => News.fromJson(e as Map<String, dynamic>)).toList();
+    return (data as List)
+        .map((e) => News.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<Meeting>> getMeetings() async {
@@ -153,7 +239,9 @@ class ApiService {
       'nom_contact': nomContact,
       'prenom_contact': prenomContact,
     };
-    if (telephone != null && telephone.isNotEmpty) body['telephone'] = telephone;
+    if (telephone != null && telephone.isNotEmpty) {
+      body['telephone'] = telephone;
+    }
     if (email != null && email.isNotEmpty) body['email'] = email;
     if (description != null && description.isNotEmpty) {
       body['description'] = description;
@@ -199,13 +287,20 @@ class ApiService {
     String? prenom,
     String? telephone,
     String? presentation,
+    String? photoPath,
   }) async {
-    final body = <String, dynamic>{};
-    if (nom != null) body['nom'] = nom;
-    if (prenom != null) body['prenom'] = prenom;
-    if (telephone != null) body['telephone'] = telephone;
-    if (presentation != null) body['presentation'] = presentation;
-    final data = await _put(ApiConfig.me, body);
+    final fields = <String, String>{};
+    if (nom != null) fields['nom'] = nom;
+    if (prenom != null) fields['prenom'] = prenom;
+    if (telephone != null) fields['telephone'] = telephone;
+    if (presentation != null) fields['presentation'] = presentation;
+    final data = photoPath == null
+        ? await _put(ApiConfig.me, fields)
+        : await _multipartPost(
+            ApiConfig.me,
+            fields: fields,
+            files: {'photo': photoPath},
+          );
     return Member.fromJson(data as Map<String, dynamic>);
   }
 
@@ -226,17 +321,24 @@ class ApiService {
     String? sousTitre,
     String? activites,
     String? description,
-    String? logoUrl,
-    String? photoUrl,
+    String? logoPath,
+    String? photoPath,
   }) async {
-    final body = <String, dynamic>{};
-    if (nom != null) body['nom'] = nom;
-    if (sousTitre != null) body['sous_titre'] = sousTitre;
-    if (activites != null) body['activites'] = activites;
-    if (description != null) body['description'] = description;
-    if (logoUrl != null) body['logo_url'] = logoUrl;
-    if (photoUrl != null) body['photo_url'] = photoUrl;
-    final data = await _put(ApiConfig.meCompany, body);
+    final fields = <String, String>{};
+    if (nom != null) fields['nom'] = nom;
+    if (sousTitre != null) fields['sous_titre'] = sousTitre;
+    if (activites != null) fields['activites'] = activites;
+    if (description != null) fields['description'] = description;
+    final data = (logoPath == null && photoPath == null)
+        ? await _put(ApiConfig.meCompany, fields)
+        : await _multipartPost(
+            ApiConfig.meCompany,
+            fields: fields,
+            files: {
+              if (logoPath != null) 'logo': logoPath,
+              if (photoPath != null) 'photo': photoPath,
+            },
+          );
     return Company.fromJson(data as Map<String, dynamic>);
   }
 

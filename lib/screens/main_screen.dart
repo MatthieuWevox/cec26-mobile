@@ -1,4 +1,3 @@
-import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -26,73 +25,56 @@ class _MainScreenState extends State<MainScreen> {
     PrivateHomeScreen(),
   ];
 
-  static const _iconList = <IconData>[
-    Icons.newspaper_rounded,
-    Icons.event_rounded,
-    Icons.business_rounded,
-    Icons.person_rounded,
-  ];
-
-  static const _labels = <String>[
-    'Actualités',
-    'Réunions',
-    'Entreprises',
-    'Mon espace',
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-
-    // Dynamically update the last icon & label based on auth state
-    final icons = List<IconData>.from(_iconList);
-    final labels = List<String>.from(_labels);
-    if (!auth.isLoggedIn) {
-      icons[3] = Icons.lock_rounded;
-      labels[3] = 'Connexion';
-    }
+    final isLoggedIn = context.watch<AuthProvider>().isLoggedIn;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: AnimatedBottomNavigationBar.builder(
-        itemCount: icons.length,
-        leftCornerRadius: 10,
-        rightCornerRadius: 10,
-        tabBuilder: (int index, bool isActive) {
-          final color =
-              isActive ? AppTheme.accentColor : Colors.white;
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icons[index], size: 24, color: color),
-              const SizedBox(height: 4),
-              Text(
-                labels[index],
-                style: TextStyle(
-                  color: color,
-                  fontSize: 11,
-                  fontWeight:
-                      isActive ? FontWeight.w600 : FontWeight.normal,
+      body: IndexedStack(index: _currentIndex, children: _screens),
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          border: const Border(top: BorderSide(color: AppTheme.dividerColor)),
+          boxShadow: AppTheme.navShadow,
+        ),
+        child: SafeArea(
+          top: false,
+          child: NavigationBar(
+            selectedIndex: _currentIndex,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            onDestinationSelected: (index) {
+              setState(() => _currentIndex = index);
+            },
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(Icons.newspaper_outlined),
+                selectedIcon: Icon(Icons.newspaper_rounded),
+                label: 'Actualités',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.calendar_month_outlined),
+                selectedIcon: Icon(Icons.calendar_month_rounded),
+                label: 'Réunions',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.apartment_outlined),
+                selectedIcon: Icon(Icons.apartment_rounded),
+                label: 'Annuaire',
+              ),
+              NavigationDestination(
+                icon: Icon(
+                  isLoggedIn
+                      ? Icons.person_outline
+                      : Icons.lock_outline_rounded,
                 ),
+                selectedIcon: Icon(
+                  isLoggedIn ? Icons.person_rounded : Icons.lock_rounded,
+                ),
+                label: isLoggedIn ? 'Mon espace' : 'Connexion',
               ),
             ],
-          );
-        },
-        activeIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
-        gapLocation: GapLocation.none,
-        backgroundColor: AppTheme.primaryColor,
-        shadow: const BoxShadow(
-          offset: Offset(0, -1),
-          blurRadius: 12,
-          spreadRadius: 0.5,
-          color: Colors.black12,
+          ),
         ),
-        height: 64,
       ),
     );
   }

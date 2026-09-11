@@ -6,6 +6,8 @@ import '../../models/member.dart';
 import '../../models/thanks.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/content_visibility_service.dart';
+import '../../services/reporting_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common_widgets.dart';
 
@@ -38,8 +40,18 @@ class _ThanksScreenState extends State<ThanksScreen>
   void _load() {
     final token = context.read<AuthProvider>().token!;
     final api = ApiService(authToken: token);
-    _received = api.getThanksReceived();
-    _sent = api.getThanksSent();
+    _received = _visibleThanks(api.getThanksReceived());
+    _sent = _visibleThanks(api.getThanksSent());
+  }
+
+  Future<List<Thanks>> _visibleThanks(Future<List<Thanks>> request) async {
+    final results = await Future.wait([
+      request,
+      ContentVisibilityService.hiddenIds('thanks'),
+    ]);
+    final thanks = results[0] as List<Thanks>;
+    final hiddenIds = results[1] as Set<int>;
+    return thanks.where((item) => !hiddenIds.contains(item.id)).toList();
   }
 
   @override
@@ -49,9 +61,6 @@ class _ThanksScreenState extends State<ThanksScreen>
         title: const Text('Remerciements'),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppTheme.accentColor,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
           tabs: const [
             Tab(icon: Icon(Icons.inbox_rounded), text: 'Reçus'),
             Tab(icon: Icon(Icons.send_rounded), text: 'Envoyés'),
@@ -61,18 +70,22 @@ class _ThanksScreenState extends State<ThanksScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _ThanksList(future: _received, isReceived: true),
-          _ThanksList(future: _sent, isReceived: false),
+          _ThanksList(
+            future: _received,
+            isReceived: true,
+            onHidden: () => setState(_load),
+          ),
+          _ThanksList(
+            future: _sent,
+            isReceived: false,
+            onHidden: () => setState(_load),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateDialog(context),
-        backgroundColor: AppTheme.accentColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Nouveau remerciement',
-          style: TextStyle(color: Colors.white),
-        ),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Nouveau remerciement'),
       ),
     );
   }
@@ -82,9 +95,8 @@ class _ThanksScreenState extends State<ThanksScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => CreateThanksSheet(
-        onCreated: () => setState(() => _load()),
-      ),
+      builder: (ctx) =>
+          CreateThanksSheet(onCreated: () => setState(() => _load())),
     );
   }
 }
@@ -92,8 +104,13 @@ class _ThanksScreenState extends State<ThanksScreen>
 class _ThanksList extends StatelessWidget {
   final Future<List<Thanks>> future;
   final bool isReceived;
+  final VoidCallback onHidden;
 
-  const _ThanksList({required this.future, required this.isReceived});
+  const _ThanksList({
+    required this.future,
+    required this.isReceived,
+    required this.onHidden,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -115,11 +132,15 @@ class _ThanksList extends StatelessWidget {
             icon: Icons.handshake_outlined,
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 100),
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           itemCount: items.length,
-          itemBuilder: (context, index) =>
-              _ThanksCard(thanks: items[index], isReceived: isReceived),
+          itemBuilder: (context, index) => _ThanksCard(
+            thanks: items[index],
+            isReceived: isReceived,
+            onHidden: onHidden,
+          ),
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
         );
       },
     );
@@ -129,8 +150,24 @@ class _ThanksList extends StatelessWidget {
 class _ThanksCard extends StatelessWidget {
   final Thanks thanks;
   final bool isReceived;
+  final VoidCallback onHidden;
 
-  const _ThanksCard({required this.thanks, required this.isReceived});
+  const _ThanksCard({
+    required this.thanks,
+    required this.isReceived,
+    required this.onHidden,
+  });
+
+  Future<void> _report(BuildContext context) async {
+    final hidden = await ReportingService.reportContent(
+      context,
+      contentType: 'thanks',
+      contentId: thanks.id,
+      contentName: 'Remerciement de ${thanks.remerciant?.fullName ?? 'membre'}',
+      authToken: context.read<AuthProvider>().token,
+    );
+    if (hidden) onHidden();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,102 +184,75 @@ class _ThanksCard extends StatelessWidget {
 
     final otherMember = isReceived ? thanks.remerciant : thanks.remercie;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentColor.withAlpha(20),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.handshake_rounded,
-                    color: AppTheme.accentColor,
-                    size: 20,
-                  ),
+    return CecSurface(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppTheme.accentSoft,
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        formattedAmount,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      Text(
-                        'Affaire du $dateStr',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (thanks.description != null &&
-                thanks.description!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Divider(),
-              const SizedBox(height: 8),
-              Text(
-                thanks.description!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.textPrimary,
-                  height: 1.5,
+                child: const Icon(
+                  Icons.handshake_outlined,
+                  color: AppTheme.accentDark,
+                  size: 21,
                 ),
               ),
-            ],
-            if (otherMember != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentColor.withAlpha(20),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      isReceived
-                          ? Icons.person_outline_rounded
-                          : Icons.send_rounded,
-                      size: 14,
-                      color: AppTheme.accentColor,
-                    ),
-                    const SizedBox(width: 6),
                     Text(
-                      '${isReceived ? 'De' : 'À'}: ${otherMember.fullName}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      formattedAmount,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(color: AppTheme.primaryColor),
+                    ),
+                    Text(
+                      'Affaire du $dateStr',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
               ),
+              if (isReceived)
+                Tooltip(
+                  message: 'Signaler ce remerciement',
+                  child: IconButton(
+                    onPressed: () => _report(context),
+                    icon: const Icon(Icons.flag_outlined),
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
             ],
+          ),
+          if (thanks.description?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 11),
+            Text(
+              thanks.description!,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ],
-        ),
+          if (otherMember != null) ...[
+            const SizedBox(height: 13),
+            CecBadge(
+              label: '${isReceived ? 'DE' : 'À'} ${otherMember.fullName}',
+              color: AppTheme.accentDark,
+              icon: isReceived
+                  ? Icons.person_outline_rounded
+                  : Icons.send_rounded,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -282,6 +292,7 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
   Future<void> _loadMembers() async {
     try {
       final list = await const ApiService().getMembers();
+      if (!mounted) return;
       final myId = context.read<AuthProvider>().currentMember?.id;
       setState(() {
         _members = list.where((m) => m.id != myId).toList();
@@ -301,13 +312,12 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
       lastDate: today,
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AppTheme.primaryColor,
-          ),
+          colorScheme: const ColorScheme.light(primary: AppTheme.primaryColor),
         ),
         child: child!,
       ),
     );
+    if (!mounted) return;
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
@@ -369,7 +379,9 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radius),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
         child: Form(
@@ -410,7 +422,7 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
                   const Center(child: CircularProgressIndicator())
                 else
                   DropdownButtonFormField<Member>(
-                    value: _selectedMember,
+                    initialValue: _selectedMember,
                     decoration: const InputDecoration(
                       hintText: 'Sélectionner un membre',
                       prefixIcon: Icon(Icons.person_rounded),
@@ -494,9 +506,6 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _loading ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accentColor,
-                    ),
                     child: _loading
                         ? const SizedBox(
                             width: 20,

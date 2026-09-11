@@ -1,6 +1,4 @@
 /// API configuration file.
-/// ⚠️ Before deployment, update [baseUrl] with your actual API domain.
-/// Change [baseUrl] to switch between test and production environments.
 class ApiConfig {
   /// Base URL of the API (without trailing slash).
   /// Example: 'https://cec2026.example.com/api'
@@ -12,12 +10,15 @@ class ApiConfig {
   static String get companies => '$baseUrl/companies';
   static String get members => '$baseUrl/members';
   static String get login => '$baseUrl/login';
+  static String get reports => '$baseUrl/reports';
 
   // Private routes
   static String get logout => '$baseUrl/logout';
   static String get me => '$baseUrl/me';
   static String get mePassword => '$baseUrl/me/password';
   static String get meCompany => '$baseUrl/me/company';
+  static String get pushTokens => '$baseUrl/me/push-tokens';
+  static String get blockedMembers => '$baseUrl/me/blocked-members';
   static String get recommendationsReceived =>
       '$baseUrl/recommendations/received';
   static String get recommendationsSent => '$baseUrl/recommendations/sent';
@@ -28,4 +29,6 @@ class ApiConfig {
 
   static String meetingGuests(int meetingId) =>
       '$baseUrl/meetings/$meetingId/guests';
+
+  static String blockedMember(int memberId) => '$blockedMembers/$memberId';
 }

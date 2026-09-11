@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../models/member.dart';
 import '../../services/api_service.dart';
+import '../../services/content_visibility_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../members/members_screen.dart';
 import 'company_detail_screen.dart';
 
 class CompaniesScreen extends StatefulWidget {
@@ -24,152 +26,161 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
   }
 
   void _load() {
-    _future = const ApiService().getCompanies();
+    _future = _getVisibleCompanies();
+  }
+
+  Future<List<Company>> _getVisibleCompanies() async {
+    final results = await Future.wait([
+      const ApiService().getCompanies(),
+      ContentVisibilityService.hiddenIds('company'),
+    ]);
+    final companies = results[0] as List<Company>;
+    final hiddenIds = results[1] as Set<int>;
+    return companies
+        .where((company) => !hiddenIds.contains(company.id))
+        .toList();
+  }
+
+  Future<void> _refresh() async {
+    setState(_load);
+    await _future;
+  }
+
+  void _openMembers() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MembersScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<List<Company>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CecLoadingWidget(
-              message: 'Chargement des entreprises…',
-            );
-          }
-          if (snapshot.hasError) {
-            return CecErrorWidget(
-              message: snapshot.error.toString(),
-              onRetry: () => setState(() => _load()),
-            );
-          }
-          final all = snapshot.data ?? [];
-          final items = _search.isEmpty
-              ? all
-              : all
-                  .where(
-                    (c) =>
-                        c.nom.toLowerCase().contains(_search.toLowerCase()) ||
-                        (c.activites ?? '')
-                            .toLowerCase()
-                            .contains(_search.toLowerCase()),
-                  )
-                  .toList();
+      body: Column(
+        children: [
+          CecPageHeader(
+            eyebrow: 'Annuaire professionnel',
+            title: 'Entreprises',
+            subtitle: 'Découvrez les savoir-faire qui font vivre le Cotentin.',
+            icon: Icons.apartment_rounded,
+            trailing: Tooltip(
+              message: 'Voir les membres',
+              child: IconButton.filled(
+                onPressed: _openMembers,
+                icon: const Icon(Icons.people_alt_outlined),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppTheme.primaryColor,
+                  fixedSize: const Size(46, 46),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Company>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CecLoadingWidget(
+                    message: 'Chargement des entreprises...',
+                  );
+                }
+                if (snapshot.hasError) {
+                  return CecErrorWidget(
+                    message: snapshot.error.toString(),
+                    onRetry: () => setState(_load),
+                  );
+                }
 
-          return CustomScrollView(
-            slivers: [
-              _buildHeader(),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: AppTheme.cardShadow,
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Rechercher une entreprise…',
-                        prefixIcon: Icon(
-                          Icons.search_rounded,
-                          color: AppTheme.textSecondary.withAlpha(150),
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        fillColor: Colors.transparent,
-                        filled: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
+                final all = snapshot.data ?? [];
+                final query = _search.trim().toLowerCase();
+                final items = query.isEmpty
+                    ? all
+                    : all.where((company) {
+                        return company.nom.toLowerCase().contains(query) ||
+                            (company.sousTitre ?? '').toLowerCase().contains(
+                              query,
+                            ) ||
+                            (company.activites ?? '').toLowerCase().contains(
+                              query,
+                            );
+                      }).toList();
+
+                return RefreshIndicator(
+                  color: AppTheme.primaryColor,
+                  onRefresh: _refresh,
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+                          child: Column(
+                            children: [
+                              CecSearchField(
+                                hintText: 'Nom, activité ou spécialité',
+                                onChanged: (value) {
+                                  setState(() => _search = value);
+                                },
+                              ),
+                              const SizedBox(height: 13),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${items.length} entreprise${items.length > 1 ? 's' : ''}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: _openMembers,
+                                    icon: const Icon(
+                                      Icons.people_alt_outlined,
+                                      size: 17,
+                                    ),
+                                    label: const Text('Membres'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      onChanged: (v) => setState(() => _search = v),
-                    ),
+                      if (items.isEmpty)
+                        const SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: CecEmptyWidget(
+                            message:
+                                'Aucune entreprise ne correspond à la recherche.',
+                            icon: Icons.search_off_rounded,
+                          ),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+                          sliver: SliverList.separated(
+                            itemCount: items.length,
+                            itemBuilder: (_, index) {
+                              return _CompanyCard(
+                                company: items[index],
+                                onHidden: () => setState(_load),
+                              );
+                            },
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 10),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-              ),
-              if (items.isEmpty)
-                const SliverFillRemaining(
-                  child: CecEmptyWidget(
-                    message: 'Aucune entreprise trouvée.',
-                    icon: Icons.business_rounded,
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 24),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) =>
-                          _CompanyCard(company: items[index]),
-                      childCount: items.length,
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return SliverToBoxAdapter(
-      child: Container(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 20,
-          left: 24,
-          right: 24,
-          bottom: 24,
-        ),
-        decoration: const BoxDecoration(
-          gradient: AppTheme.headerGradient,
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(28),
+                );
+              },
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(25),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.business_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                const Text(
-                  'Entreprises',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Découvrez les entreprises du réseau',
-              style: TextStyle(
-                color: Colors.white.withAlpha(180),
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -177,120 +188,110 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
 
 class _CompanyCard extends StatelessWidget {
   final Company company;
-  const _CompanyCard({required this.company});
+  final VoidCallback onHidden;
+
+  const _CompanyCard({required this.company, required this.onHidden});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CompanyDetailScreen(company: company),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Hero(
-                tag: 'company-logo-${company.id}',
-                child: CompanyLogo(
-                  logoUrl: company.logoUrl,
-                  companyName: company.nom,
-                  size: 56,
+    final memberCount = company.members?.length ?? 0;
+
+    return CecSurface(
+      padding: EdgeInsets.zero,
+      onTap: () async {
+        final hidden = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CompanyDetailScreen(company: company),
+          ),
+        );
+        if (hidden == true) onHidden();
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (company.photoUrl != null && company.photoUrl!.isNotEmpty)
+            AspectRatio(
+              aspectRatio: 16 / 5.5,
+              child: Image.network(
+                company.photoUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const ColoredBox(
+                  color: AppTheme.surfaceMuted,
+                  child: Center(
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      company.nom,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    if (company.sousTitre != null &&
-                        company.sousTitre!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Hero(
+                  tag: 'company-logo-${company.id}',
+                  child: CompanyLogo(
+                    logoUrl: company.logoUrl,
+                    companyName: company.nom,
+                    size: 58,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        company.sousTitre!,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textSecondary,
-                        ),
-                        maxLines: 1,
+                        company.nom,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                    ],
-                    if (company.activites != null &&
-                        company.activites!.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentColor.withAlpha(20),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          company.activites!,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.accentColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
+                      if (company.sousTitre?.isNotEmpty ?? false) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          company.sousTitre!,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
-                      ),
-                    ],
-                    if (company.members != null &&
-                        company.members!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      ],
+                      if (company.activites?.isNotEmpty ?? false) ...[
+                        const SizedBox(height: 9),
+                        CecBadge(
+                          label: company.activites!,
+                          color: AppTheme.accentDark,
+                          icon: Icons.sell_outlined,
+                        ),
+                      ],
+                      const SizedBox(height: 11),
                       Row(
                         children: [
-                          Icon(
-                            Icons.people_outline_rounded,
-                            size: 13,
-                            color: AppTheme.textSecondary.withAlpha(150),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${company.members!.length} membre${company.members!.length > 1 ? 's' : ''}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textSecondary.withAlpha(180),
+                          Expanded(
+                            child: CecMeta(
+                              icon: Icons.people_outline_rounded,
+                              text:
+                                  '$memberCount membre${memberCount > 1 ? 's' : ''}',
                             ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: AppTheme.primaryColor,
+                            size: 18,
                           ),
                         ],
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: AppTheme.textSecondary.withAlpha(120),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

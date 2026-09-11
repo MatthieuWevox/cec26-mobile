@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -69,7 +70,9 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
           child: Container(
             decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppTheme.radius),
+              ),
             ),
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
             child: Form(
@@ -138,18 +141,22 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                           if (_guestFormKey.currentState!.validate()) {
                             try {
                               final api = ApiService(authToken: auth.token);
-                              await api.addGuestToMeeting(
+                              final guestData = await api.addGuestToMeeting(
                                 meetingId: _meeting.id,
                                 nom: _guestNomCtrl.text.trim(),
                                 prenom: _guestPrenomCtrl.text.trim(),
                                 nomEntreprise:
                                     _guestEntrepriseCtrl.text.trim().isEmpty
-                                        ? null
-                                        : _guestEntrepriseCtrl.text.trim(),
+                                    ? null
+                                    : _guestEntrepriseCtrl.text.trim(),
                               );
+                              if (!mounted) return;
+                              setState(() {
+                                _meeting.guests.add(Guest.fromJson(guestData));
+                              });
                               if (ctx.mounted) Navigator.pop(ctx);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                              if (ctx.mounted) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
                                   const SnackBar(
                                     content: Text('Invité ajouté avec succès.'),
                                     backgroundColor: AppTheme.successColor,
@@ -196,8 +203,10 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
           SliverAppBar(
             expandedHeight: 100,
             pinned: true,
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: AppTheme.primaryDark,
             foregroundColor: Colors.white,
+            iconTheme: const IconThemeData(color: Colors.white),
+            systemOverlayStyle: SystemUiOverlayStyle.light,
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 _formattedDate,
@@ -221,7 +230,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppTheme.radius),
                       boxShadow: AppTheme.cardShadow,
                     ),
                     child: Column(
@@ -265,7 +274,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                             AppTheme.accentColor.withAlpha(8),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppTheme.radius),
                         border: Border.all(
                           color: AppTheme.accentColor.withAlpha(40),
                         ),
@@ -314,9 +323,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                       ),
                     )
                   else
-                    ..._meeting.guests.map(
-                      (g) => _GuestTile(guest: g),
-                    ),
+                    ..._meeting.guests.map((g) => _GuestTile(guest: g)),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -327,12 +334,8 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
       floatingActionButton: auth.isLoggedIn
           ? FloatingActionButton.extended(
               onPressed: () => _showAddGuestDialog(context),
-              backgroundColor: AppTheme.primaryColor,
-              icon: const Icon(Icons.person_add_rounded, color: Colors.white),
-              label: const Text(
-                'Ajouter un invité',
-                style: TextStyle(color: Colors.white),
-              ),
+              icon: const Icon(Icons.person_add_rounded),
+              label: const Text('Ajouter un invité'),
             )
           : null,
     );
@@ -350,7 +353,7 @@ class _GuestTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         boxShadow: AppTheme.cardShadow,
       ),
       child: Row(
@@ -393,8 +396,7 @@ class _GuestTile extends StatelessWidget {
           ),
           if (guest.invitedBy != null)
             Tooltip(
-              message:
-                  'Invité par ${guest.invitedBy!.fullName}',
+              message: 'Invité par ${guest.invitedBy!.fullName}',
               child: const Icon(
                 Icons.person_rounded,
                 size: 16,

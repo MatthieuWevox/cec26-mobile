@@ -1,192 +1,166 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/member.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/reporting_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../members/member_detail_screen.dart';
 
 class CompanyDetailScreen extends StatelessWidget {
   final Company company;
+
   const CompanyDetailScreen({super.key, required this.company});
+
+  Future<void> _report(BuildContext context) async {
+    final hidden = await ReportingService.reportContent(
+      context,
+      contentType: 'company',
+      contentId: company.id,
+      contentName: company.nom,
+      authToken: context.read<AuthProvider>().token,
+    );
+    if (hidden && context.mounted) {
+      Navigator.pop(context, true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = company.photoUrl?.isNotEmpty ?? false;
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: company.photoUrl != null ? 220 : 120,
+            expandedHeight: hasPhoto ? 250 : 150,
             pinned: true,
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: AppTheme.primaryDark,
             foregroundColor: Colors.white,
+            iconTheme: const IconThemeData(color: Colors.white),
+            surfaceTintColor: Colors.transparent,
+            systemOverlayStyle: SystemUiOverlayStyle.light,
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                company.nom,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (hasPhoto)
+                    CachedNetworkImage(
+                      imageUrl: company.photoUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) =>
+                          const ColoredBox(color: AppTheme.primaryDark),
+                    )
+                  else
+                    const ColoredBox(color: AppTheme.primaryDark),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0x10000000), Color(0xE617143E)],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              titlePadding: const EdgeInsets.fromLTRB(56, 0, 16, 16),
-              background: company.photoUrl != null
-                  ? Stack(
-                      fit: StackFit.expand,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Transform.translate(
+                    offset: const Offset(0, -28),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        CachedNetworkImage(
-                          imageUrl: company.photoUrl!,
-                          fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) => Container(
-                            color: AppTheme.primaryColor,
+                        Hero(
+                          tag: 'company-logo-${company.id}',
+                          child: CompanyLogo(
+                            logoUrl: company.logoUrl,
+                            companyName: company.nom,
+                            size: 76,
                           ),
                         ),
-                        const DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Color(0xCC272262),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 3),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  company.nom,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium,
+                                ),
+                                if (company.sousTitre?.isNotEmpty ?? false) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    company.sousTitre!,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ],
                               ],
                             ),
                           ),
                         ),
                       ],
-                    )
-                  : null,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Logo + subtitle
-                  Row(
-                    children: [
-                      Hero(
-                        tag: 'company-logo-${company.id}',
-                        child: CompanyLogo(
-                          logoUrl: company.logoUrl,
-                          companyName: company.nom,
-                          size: 64,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              company.nom,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            if (company.sousTitre != null &&
-                                company.sousTitre!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                company.sousTitre!,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Activities
-                  if (company.activites != null &&
-                      company.activites!.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppTheme.accentColor.withAlpha(20),
-                            AppTheme.accentColor.withAlpha(10),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.work_outline_rounded,
-                            size: 16,
-                            color: AppTheme.accentColor,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              company.activites!,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
+                  ),
+                  if (company.activites?.isNotEmpty ?? false) ...[
+                    CecBadge(
+                      label: company.activites!,
+                      color: AppTheme.accentDark,
+                      icon: Icons.sell_outlined,
+                    ),
+                    const SizedBox(height: 22),
                   ],
-
-                  // Description
-                  if (company.description != null &&
-                      company.description!.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    const Text(
+                  if (company.description?.isNotEmpty ?? false) ...[
+                    Text(
                       'À propos',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      company.description!,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: AppTheme.textPrimary,
-                        height: 1.7,
+                    CecSurface(
+                      padding: const EdgeInsets.all(18),
+                      child: Text(
+                        company.description!,
+                        style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ),
                   ],
-
-                  // Members
-                  if (company.members != null &&
-                      company.members!.isNotEmpty) ...[
-                    const SizedBox(height: 28),
-                    Text(
-                      'Membres (${company.members!.length})',
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  if (company.members?.isNotEmpty ?? false) ...[
+                    SectionHeader(
+                      title: 'Équipe',
+                      subtitle:
+                          '${company.members!.length} membre${company.members!.length > 1 ? 's' : ''} dans le réseau.',
                     ),
-                    const SizedBox(height: 12),
-                    ...company.members!.map(
-                      (m) => _MemberTile(member: m),
-                    ),
+                    for (final member in company.members!) ...[
+                      _MemberTile(member: member),
+                      const SizedBox(height: 9),
+                    ],
                   ],
-
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
+                  Align(
+                    alignment: Alignment.center,
+                    child: TextButton.icon(
+                      onPressed: () => _report(context),
+                      icon: const Icon(Icons.flag_outlined, size: 18),
+                      label: const Text('Signaler une information'),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -199,72 +173,54 @@ class CompanyDetailScreen extends StatelessWidget {
 
 class _MemberTile extends StatelessWidget {
   final Member member;
+
   const _MemberTile({required this.member});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppTheme.cardShadow,
+    return CecSurface(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => MemberDetailScreen(member: member)),
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MemberDetailScreen(member: member),
-              ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
+      padding: const EdgeInsets.all(13),
+      child: Row(
+        children: [
+          Hero(
+            tag: 'member-avatar-${member.id}',
+            child: MemberAvatar(
+              imageUrl: member.photoUrl,
+              name: member.fullName,
+              radius: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Hero(
-                  tag: 'member-avatar-${member.id}',
-                  child: MemberAvatar(name: member.fullName, radius: 22),
+                Text(
+                  member.fullName,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        member.fullName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                      if (member.telephone != null &&
-                          member.telephone!.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          member.telephone!,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ],
+                if (member.presentation?.isNotEmpty ?? false) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    member.presentation!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppTheme.textSecondary,
-                ),
+                ],
               ],
             ),
           ),
-        ),
+          const Icon(
+            Icons.arrow_forward_rounded,
+            color: AppTheme.primaryColor,
+            size: 18,
+          ),
+        ],
       ),
     );
   }

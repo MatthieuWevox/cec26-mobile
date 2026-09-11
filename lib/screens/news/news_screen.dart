@@ -27,101 +27,235 @@ class _NewsScreenState extends State<NewsScreen> {
     _future = const ApiService().getNews();
   }
 
+  Future<void> _refresh() async {
+    setState(_load);
+    await _future;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<List<News>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CecLoadingWidget(message: 'Chargement des actualités…');
-          }
-          if (snapshot.hasError) {
-            return CecErrorWidget(
-              message: snapshot.error.toString(),
-              onRetry: () => setState(() => _load()),
-            );
-          }
-          final items = snapshot.data ?? [];
-          if (items.isEmpty) {
-            return const CecEmptyWidget(
-              message: 'Aucune actualité disponible.',
-              icon: Icons.newspaper_rounded,
-            );
-          }
-          return RefreshIndicator(
-            color: AppTheme.accentColor,
-            onRefresh: () async => setState(() => _load()),
-            child: CustomScrollView(
-              slivers: [
-                _buildHeader(),
-                SliverPadding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 24),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _NewsCard(news: items[index]),
-                      childCount: items.length,
-                    ),
+      body: Column(
+        children: [
+          const CecPageHeader(
+            eyebrow: 'Le club en mouvement',
+            title: 'Actualités',
+            subtitle: 'Les nouvelles, initiatives et temps forts du réseau.',
+            icon: Icons.auto_awesome_rounded,
+          ),
+          Expanded(
+            child: FutureBuilder<List<News>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CecLoadingWidget(
+                    message: 'Chargement des actualités...',
+                  );
+                }
+                if (snapshot.hasError) {
+                  return CecErrorWidget(
+                    message: snapshot.error.toString(),
+                    onRetry: () => setState(_load),
+                  );
+                }
+
+                final items = snapshot.data ?? [];
+                if (items.isEmpty) {
+                  return const CecEmptyWidget(
+                    message: 'Aucune actualité disponible pour le moment.',
+                    icon: Icons.newspaper_rounded,
+                  );
+                }
+
+                return RefreshIndicator(
+                  color: AppTheme.primaryColor,
+                  onRefresh: _refresh,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+                    itemCount: items.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'À la une',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall,
+                                ),
+                              ),
+                              Text(
+                                '${items.length} publication${items.length > 1 ? 's' : ''}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final news = items[index - 1];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: index == 1
+                            ? _FeaturedNewsCard(news: news)
+                            : _NewsCard(news: news),
+                      );
+                    },
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildHeader() {
-    return SliverToBoxAdapter(
-      child: Container(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 20,
-          left: 24,
-          right: 24,
-          bottom: 24,
-        ),
-        decoration: const BoxDecoration(
-          gradient: AppTheme.headerGradient,
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(28),
+class _FeaturedNewsCard extends StatelessWidget {
+  final News news;
+
+  const _FeaturedNewsCard({required this.news});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.primaryDark,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        boxShadow: AppTheme.softShadow,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _openNews(context, news),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AspectRatio(
+                aspectRatio: 16 / 8.5,
+                child: Hero(
+                  tag: 'news-image-${news.id}',
+                  child: Image.asset('assets/actu.jpg', fit: BoxFit.cover),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CecMeta(
+                      icon: Icons.schedule_rounded,
+                      text: _formatDate(news.createdAt),
+                      color: AppTheme.accentColor,
+                    ),
+                    const SizedBox(height: 11),
+                    Text(
+                      news.titre,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineMedium?.copyWith(color: Colors.white),
+                    ),
+                    if (news.sousTitre.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        news.sousTitre,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withAlpha(178),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Lire l’article',
+                          style: TextStyle(
+                            color: AppTheme.accentColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 17,
+                          color: AppTheme.accentColor,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+    );
+  }
+}
+
+class _NewsCard extends StatelessWidget {
+  final News news;
+
+  const _NewsCard({required this.news});
+
+  @override
+  Widget build(BuildContext context) {
+    return CecSurface(
+      onTap: () => _openNews(context, news),
+      padding: EdgeInsets.zero,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(25),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.newspaper_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
+            Container(width: 4, color: AppTheme.accentColor),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CecMeta(
+                      icon: Icons.schedule_rounded,
+                      text: _formatDate(news.createdAt),
+                    ),
+                    const SizedBox(height: 9),
+                    Text(
+                      news.titre,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    if (news.sousTitre.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        news.sousTitre,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    const Align(
+                      alignment: Alignment.centerRight,
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 18,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                const Text(
-                  'Actualités',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Restez informé des dernières nouvelles',
-              style: TextStyle(
-                color: Colors.white.withAlpha(180),
-                fontSize: 14,
               ),
             ),
           ],
@@ -131,168 +265,14 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 }
 
-class _NewsCard extends StatelessWidget {
-  final News news;
-  const _NewsCard({required this.news});
+String _formatDate(String value) {
+  final date = DateTime.tryParse(value);
+  return date == null ? '' : DateFormat('d MMMM yyyy', 'fr_FR').format(date);
+}
 
-  @override
-  Widget build(BuildContext context) {
-    final date = DateTime.tryParse(news.createdAt);
-    final dateStr = date != null
-        ? DateFormat('d MMMM yyyy', 'fr_FR').format(date)
-        : '';
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => NewsDetailScreen(news: news),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            SizedBox(
-              height: 160,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Hero(
-                    tag: 'news-image-${news.id}',
-                    child: Image.asset(
-                      'assets/actu.jpg',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  // Gradient overlay
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Color(0x40000000)],
-                      ),
-                    ),
-                  ),
-                  // Status badge
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: news.statut == 'publié'
-                            ? AppTheme.accentColor
-                            : Colors.orange,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        news.statut.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (dateStr.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.schedule_rounded,
-                            size: 14,
-                            color: AppTheme.accentColor,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            dateStr,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.accentColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  Text(
-                    news.titre,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
-                      height: 1.3,
-                    ),
-                  ),
-                  if (news.sousTitre.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      news.sousTitre,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textSecondary,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Text(
-                        'Lire la suite',
-                        style: TextStyle(
-                          color: AppTheme.accentColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 16,
-                        color: AppTheme.accentColor,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+void _openNews(BuildContext context, News news) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => NewsDetailScreen(news: news)),
+  );
 }

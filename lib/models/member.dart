@@ -36,8 +36,8 @@ class Company {
       updatedAt: json['updated_at'] as String,
       members: json['members'] != null
           ? (json['members'] as List)
-              .map((m) => Member.fromJson(m as Map<String, dynamic>))
-              .toList()
+                .map((m) => Member.fromJson(m as Map<String, dynamic>))
+                .toList()
           : null,
     );
   }
@@ -61,6 +61,7 @@ class Member {
   final String email;
   final String? telephone;
   final String? presentation;
+  final String? photoUrl;
   final int? companyId;
   final String createdAt;
   final String updatedAt;
@@ -73,6 +74,7 @@ class Member {
     required this.email,
     this.telephone,
     this.presentation,
+    this.photoUrl,
     this.companyId,
     required this.createdAt,
     required this.updatedAt,
@@ -89,6 +91,7 @@ class Member {
       email: json['email'] as String,
       telephone: json['telephone'] as String?,
       presentation: json['presentation'] as String?,
+      photoUrl: json['photo_url'] as String?,
       companyId: json['company_id'] as int?,
       createdAt: json['created_at'] as String,
       updatedAt: json['updated_at'] as String,
@@ -106,6 +109,7 @@ class Member {
       'email': email,
       'telephone': telephone,
       'presentation': presentation,
+      'photo_url': photoUrl,
       'company_id': companyId,
       'created_at': createdAt,
       'updated_at': updatedAt,
