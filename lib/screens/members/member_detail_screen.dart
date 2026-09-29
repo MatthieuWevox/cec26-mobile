@@ -135,208 +135,268 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
     final canBlock = auth.isLoggedIn && auth.currentMember?.id != member.id;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 225,
-            pinned: true,
-            backgroundColor: AppTheme.primaryDark,
-            foregroundColor: Colors.white,
-            iconTheme: const IconThemeData(color: Colors.white),
-            surfaceTintColor: Colors.transparent,
-            systemOverlayStyle: SystemUiOverlayStyle.light,
-            flexibleSpace: FlexibleSpaceBar(
-              background: DecoratedBox(
-                decoration: const BoxDecoration(color: AppTheme.primaryDark),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 54, 20, 20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+      body: CecBackground(
+        accentTop: false,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 258,
+              pinned: true,
+              stretch: true,
+              toolbarHeight: 64,
+              backgroundColor: AppTheme.primaryDark,
+              foregroundColor: Colors.white,
+              automaticallyImplyLeading: false,
+              leadingWidth: 68,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+                child: CecGlassIconButton(
+                  icon: Icons.arrow_back_rounded,
+                  tooltip: 'Retour',
+                  dark: true,
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              surfaceTintColor: Colors.transparent,
+              systemOverlayStyle: SystemUiOverlayStyle.light,
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.parallax,
+                stretchModes: const [StretchMode.zoomBackground],
+                background: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                  ),
+                  child: SafeArea(
+                    child: Stack(
                       children: [
-                        Hero(
-                          tag: 'member-avatar-${member.id}',
-                          child: MemberAvatar(
-                            imageUrl: member.photoUrl,
-                            name: member.fullName,
-                            radius: 42,
+                        Positioned(
+                          right: -42,
+                          top: 36,
+                          child: Icon(
+                            Icons.people_alt_rounded,
+                            size: 150,
+                            color: AppTheme.accentColor.withAlpha(18),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          member.fullName,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(color: Colors.white),
-                        ),
-                        if (member.company != null) ...[
-                          const SizedBox(height: 5),
-                          Text(
-                            member.company!.nom,
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: AppTheme.accentColor,
-                                  fontWeight: FontWeight.w600,
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 54, 20, 18),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Hero(
+                                  tag: 'member-avatar-${member.id}',
+                                  child: MemberAvatar(
+                                    imageUrl: member.photoUrl,
+                                    name: member.fullName,
+                                    radius: 44,
+                                  ),
                                 ),
+                                const SizedBox(height: 13),
+                                Text(
+                                  member.fullName,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(color: Colors.white),
+                                ),
+                                if (member.company != null) ...[
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    member.company!.nom,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: AppTheme.accentColor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _sendEmail,
-                          icon: const Icon(Icons.email_outlined, size: 19),
-                          label: const Text('Écrire'),
-                        ),
-                      ),
-                      if (member.telephone?.isNotEmpty ?? false) ...[
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _call,
-                            icon: const Icon(Icons.phone_outlined, size: 19),
-                            label: const Text('Appeler'),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (member.company != null) ...[
-                    const SectionHeader(
-                      title: 'Entreprise',
-                      subtitle: 'Structure représentée dans le réseau.',
-                    ),
-                    CecSurface(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          CompanyLogo(
-                            logoUrl: member.company!.logoUrl,
-                            companyName: member.company!.nom,
-                            size: 54,
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  member.company!.nom,
-                                  style: Theme.of(context).textTheme.titleLarge,
+            SliverToBoxAdapter(
+              child: CecContentWidth(
+                maxWidth: 760,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 20, 18, 48),
+                  child: CecReveal(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _sendEmail,
+                                icon: const Icon(
+                                  Icons.email_outlined,
+                                  size: 19,
                                 ),
-                                if (member.company!.sousTitre?.isNotEmpty ??
-                                    false) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    member.company!.sousTitre!,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
+                                label: const Text('Écrire'),
+                              ),
+                            ),
+                            if (member.telephone?.isNotEmpty ?? false) ...[
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _call,
+                                  icon: const Icon(
+                                    Icons.phone_outlined,
+                                    size: 19,
                                   ),
-                                ],
+                                  label: const Text('Appeler'),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        if (member.company != null) ...[
+                          const SectionHeader(
+                            title: 'Entreprise',
+                            subtitle: 'Structure représentée dans le réseau.',
+                          ),
+                          CecSurface(
+                            glass: true,
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                CompanyLogo(
+                                  logoUrl: member.company!.logoUrl,
+                                  companyName: member.company!.nom,
+                                  size: 54,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        member.company!.nom,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleLarge,
+                                      ),
+                                      if (member
+                                              .company!
+                                              .sousTitre
+                                              ?.isNotEmpty ??
+                                          false) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          member.company!.sousTitre!,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ],
-                  const SectionHeader(
-                    title: 'Coordonnées',
-                    subtitle: 'Informations de contact professionnelles.',
-                  ),
-                  CecSurface(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    child: Column(
-                      children: [
-                        InfoRow(
-                          icon: Icons.email_outlined,
-                          label: 'Email',
-                          value: member.email,
+                        const SectionHeader(
+                          title: 'Coordonnées',
+                          subtitle: 'Informations de contact professionnelles.',
                         ),
-                        if (member.telephone?.isNotEmpty ?? false) ...[
-                          const Divider(),
-                          InfoRow(
-                            icon: Icons.phone_outlined,
-                            label: 'Téléphone',
-                            value: member.telephone!,
+                        CecSurface(
+                          glass: true,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          child: Column(
+                            children: [
+                              InfoRow(
+                                icon: Icons.email_outlined,
+                                label: 'Email',
+                                value: member.email,
+                              ),
+                              if (member.telephone?.isNotEmpty ?? false) ...[
+                                const Divider(),
+                                InfoRow(
+                                  icon: Icons.phone_outlined,
+                                  label: 'Téléphone',
+                                  value: member.telephone!,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (member.presentation?.isNotEmpty ?? false) ...[
+                          const SectionHeader(
+                            title: 'Présentation',
+                            subtitle: 'Parcours, activité et expertises.',
+                          ),
+                          CecSurface(
+                            color: AppTheme.accentSoft,
+                            padding: const EdgeInsets.all(18),
+                            child: Text(
+                              member.presentation!,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
                           ),
                         ],
+                        const SizedBox(height: 24),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          runAlignment: WrapAlignment.center,
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () => _report(context),
+                              icon: const Icon(Icons.flag_outlined, size: 18),
+                              label: const Text('Signaler'),
+                            ),
+                            if (canBlock)
+                              TextButton.icon(
+                                onPressed: _blockLoading ? null : _toggleBlock,
+                                icon: _blockLoading
+                                    ? const SizedBox.square(
+                                        dimension: 17,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Icon(
+                                        _isBlocked
+                                            ? Icons.person_add_alt_1_outlined
+                                            : Icons.block_outlined,
+                                        size: 18,
+                                      ),
+                                label: Text(
+                                  _isBlocked
+                                      ? 'Débloquer'
+                                      : 'Bloquer ce membre',
+                                ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                  if (member.presentation?.isNotEmpty ?? false) ...[
-                    const SectionHeader(
-                      title: 'Présentation',
-                      subtitle: 'Parcours, activité et expertises.',
-                    ),
-                    CecSurface(
-                      color: AppTheme.accentSoft,
-                      padding: const EdgeInsets.all(18),
-                      child: Text(
-                        member.presentation!,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    runAlignment: WrapAlignment.center,
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      TextButton.icon(
-                        onPressed: () => _report(context),
-                        icon: const Icon(Icons.flag_outlined, size: 18),
-                        label: const Text('Signaler'),
-                      ),
-                      if (canBlock)
-                        TextButton.icon(
-                          onPressed: _blockLoading ? null : _toggleBlock,
-                          icon: _blockLoading
-                              ? const SizedBox.square(
-                                  dimension: 17,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Icon(
-                                  _isBlocked
-                                      ? Icons.person_add_alt_1_outlined
-                                      : Icons.block_outlined,
-                                  size: 18,
-                                ),
-                          label: Text(
-                            _isBlocked ? 'Débloquer' : 'Bloquer ce membre',
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

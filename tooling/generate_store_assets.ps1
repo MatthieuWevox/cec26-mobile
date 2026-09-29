@@ -1,17 +1,18 @@
 ﻿param(
-    [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot)
+    [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
+    [switch]$IncludeTablets
 )
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
 $primary = [System.Drawing.ColorTranslator]::FromHtml('#272262')
-$primaryDark = [System.Drawing.ColorTranslator]::FromHtml('#17143E')
+$primaryDark = [System.Drawing.ColorTranslator]::FromHtml('#151234')
 $accent = [System.Drawing.ColorTranslator]::FromHtml('#5CC7CF')
-$surface = [System.Drawing.ColorTranslator]::FromHtml('#F3F5F9')
-$surfaceAlt = [System.Drawing.ColorTranslator]::FromHtml('#E5F5F6')
+$surface = [System.Drawing.ColorTranslator]::FromHtml('#F5F7FA')
+$surfaceAlt = [System.Drawing.ColorTranslator]::FromHtml('#E5F7F8')
 $text = [System.Drawing.ColorTranslator]::FromHtml('#171827')
-$muted = [System.Drawing.ColorTranslator]::FromHtml('#687087')
+$muted = [System.Drawing.ColorTranslator]::FromHtml('#626A7D')
 $white = [System.Drawing.Color]::White
 $frame = [System.Drawing.ColorTranslator]::FromHtml('#10111A')
 $frameEdge = [System.Drawing.ColorTranslator]::FromHtml('#444656')
@@ -298,11 +299,11 @@ $featureBodyFont = [System.Drawing.Font]::new('Segoe UI', 22, [System.Drawing.Fo
 Draw-TextBlock $featureGraphics 'Le Cotentin entreprend.' $featureTitleFont $white ([System.Drawing.RectangleF]::new(92, 205, 555, 56))
 Draw-TextBlock $featureGraphics 'Actualités, rencontres et réseau professionnel.' $featureBodyFont ([System.Drawing.Color]::FromArgb(220, 255, 255, 255)) ([System.Drawing.RectangleF]::new(94, 282, 530, 70))
 Draw-TextBlock $featureGraphics 'CEC 2026' $featureBodyFont $accent ([System.Drawing.RectangleF]::new(94, 405, 260, 40))
-$featureNews = [System.Drawing.Image]::FromFile((Join-Path $rawDirectory '01-actualites.png'))
+$featureNetwork = [System.Drawing.Image]::FromFile((Join-Path $rawDirectory '04-annuaire.png'))
 $featureMeetings = [System.Drawing.Image]::FromFile((Join-Path $rawDirectory '03-reunions.png'))
 Draw-DeviceMockup -Graphics $featureGraphics -Image $featureMeetings -X 660 -Y 34 -Width 205 -Height 350 -Angle -5 -Kind 'android'
-Draw-DeviceMockup -Graphics $featureGraphics -Image $featureNews -X 790 -Y -30 -Width 235 -Height 400 -Angle 4 -Kind 'android'
-$featureNews.Dispose()
+Draw-DeviceMockup -Graphics $featureGraphics -Image $featureNetwork -X 790 -Y -30 -Width 235 -Height 400 -Angle 4 -Kind 'android'
+$featureNetwork.Dispose()
 $featureMeetings.Dispose()
 $featureTitleFont.Dispose()
 $featureBodyFont.Dispose()
@@ -313,9 +314,9 @@ $featureCanvas.Bitmap.Dispose()
 $screens = @(
     @{
         Output = '01-actualites'
-        Primary = '01-actualites.png'
+        Primary = '04-annuaire.png'
         Title = "Votre réseau, en un coup d'œil"
-        Subtitle = 'Actualités et initiatives du Cotentin.'
+        Subtitle = 'Entreprises, membres et expertises du Cotentin.'
         Single = $true
     },
     @{
@@ -334,10 +335,10 @@ $screens = @(
     },
     @{
         Output = '04-annuaire'
-        Primary = '04-annuaire.png'
+        Primary = '06-membres.png'
         Secondary = '05-entreprise.png'
         Title = 'Les bonnes expertises, à portée de main'
-        Subtitle = 'Découvrez les entreprises et les professionnels du territoire.'
+        Subtitle = 'Découvrez les professionnels et leurs entreprises.'
     },
     @{
         Output = '05-connexion'
@@ -474,10 +475,15 @@ $appleKickerFont.Dispose()
 $appleTitleFont.Dispose()
 $appleBodyFont.Dispose()
 
+if (-not $IncludeTablets) {
+    Write-Host "Phone store assets generated in $googleDirectory and $appleDirectory"
+    return
+}
+
 $tabletScreens = @(
-    @{ File = 'tablet-01-actualites.png'; Output = '01-actualites'; Title = "Toute l'actualité du réseau"; Subtitle = 'Les initiatives du Cotentin, confortablement sur grand écran.' },
+    @{ File = 'tablet-03-annuaire.png'; Output = '01-actualites'; Title = 'Tout le réseau sur grand écran'; Subtitle = 'Entreprises et expertises sont faciles à identifier.' },
     @{ File = 'tablet-02-reunions.png'; Output = '02-reunions'; Title = "L'agenda, pensé pour être parcouru"; Subtitle = 'Rendez-vous à venir et archives restent immédiatement accessibles.' },
-    @{ File = 'tablet-03-annuaire.png'; Output = '03-annuaire'; Title = "L'annuaire sur grand écran"; Subtitle = 'Entreprises et expertises sont faciles à identifier.' },
+    @{ File = 'tablet-04-membres.png'; Output = '03-annuaire'; Title = 'Les membres du Cotentin'; Subtitle = 'Retrouvez les personnes qui font vivre le réseau.' },
     @{ File = 'tablet-04-connexion.png'; Output = '04-connexion'; Title = 'Votre espace membre, partout'; Subtitle = 'Retrouvez vos échanges professionnels depuis votre tablette.'; CropTop = 100 }
 )
 

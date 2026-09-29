@@ -37,86 +37,114 @@ class LegalInformationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('À propos et assistance')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-        children: [
-          Center(
-            child: Image.asset(
-              'assets/logo_purple_nobg.png',
-              height: 76,
-              fit: BoxFit.contain,
+      appBar: const CecGlassAppBar(title: Text('À propos et assistance')),
+      body: CecBackground(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(18, 24, 18, 40),
+          children: [
+            CecContentWidth(
+              maxWidth: 720,
+              child: Column(
+                children: [
+                  CecReveal(
+                    child: Container(
+                      width: 104,
+                      height: 104,
+                      padding: const EdgeInsets.all(17),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(216),
+                        borderRadius: BorderRadius.circular(26),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withAlpha(20),
+                        ),
+                        boxShadow: AppTheme.cardShadow,
+                      ),
+                      child: Image.asset(
+                        'assets/logo_purple_nobg.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'CEC 2026',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'L’application du Club des Entrepreneurs du Cotentin.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  CecReveal(
+                    delay: const Duration(milliseconds: 80),
+                    child: CecSurface(
+                      glass: true,
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        children: [
+                          _InformationAction(
+                            icon: Icons.language_rounded,
+                            title: 'Site de présentation',
+                            subtitle: 'Découvrir l’application et le Club',
+                            onTap: () => _open(context, _websiteUrl),
+                          ),
+                          const Divider(height: 1),
+                          _InformationAction(
+                            icon: Icons.privacy_tip_outlined,
+                            title: 'Politique de confidentialité',
+                            subtitle:
+                                'Données collectées, utilisation et conservation',
+                            onTap: () => _open(context, _privacyUrl),
+                          ),
+                          const Divider(height: 1),
+                          _InformationAction(
+                            icon: Icons.gavel_outlined,
+                            title: 'Conditions et règles d’utilisation',
+                            subtitle:
+                                'Usage du service, contenus et signalements',
+                            onTap: () => _open(context, termsUrl),
+                          ),
+                          const Divider(height: 1),
+                          _InformationAction(
+                            icon: Icons.person_remove_outlined,
+                            title: 'Suppression du compte et des données',
+                            subtitle: 'Consulter la procédure de suppression',
+                            onTap: () => _open(context, _deletionUrl),
+                          ),
+                          const Divider(height: 1),
+                          _InformationAction(
+                            icon: Icons.support_agent_rounded,
+                            title: 'Contacter l’assistance',
+                            subtitle: 'contact@wevox.eu',
+                            onTap: () => _open(context, _supportEmail),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Club des Entrepreneurs du Cotentin\n'
+                    '40 boulevard Schuman, BP 612\n'
+                    '50100 Cherbourg-en-Cotentin',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      height: 1.55,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'CEC 2026',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'L’application du Club des Entrepreneurs du Cotentin.',
-            textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
-          ),
-          const SizedBox(height: 28),
-          CecSurface(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _InformationAction(
-                  icon: Icons.language_rounded,
-                  title: 'Site de présentation',
-                  subtitle: 'Découvrir l’application et le Club',
-                  onTap: () => _open(context, _websiteUrl),
-                ),
-                const Divider(height: 1),
-                _InformationAction(
-                  icon: Icons.privacy_tip_outlined,
-                  title: 'Politique de confidentialité',
-                  subtitle: 'Données collectées, utilisation et conservation',
-                  onTap: () => _open(context, _privacyUrl),
-                ),
-                const Divider(height: 1),
-                _InformationAction(
-                  icon: Icons.gavel_outlined,
-                  title: 'Conditions et règles d’utilisation',
-                  subtitle: 'Usage du service, contenus et signalements',
-                  onTap: () => _open(context, termsUrl),
-                ),
-                const Divider(height: 1),
-                _InformationAction(
-                  icon: Icons.person_remove_outlined,
-                  title: 'Suppression du compte et des données',
-                  subtitle: 'Consulter la procédure de suppression',
-                  onTap: () => _open(context, _deletionUrl),
-                ),
-                const Divider(height: 1),
-                _InformationAction(
-                  icon: Icons.support_agent_rounded,
-                  title: 'Contacter l’assistance',
-                  subtitle: 'contact@wevox.eu',
-                  onTap: () => _open(context, _supportEmail),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Club des Entrepreneurs du Cotentin\n'
-            '40 boulevard Schuman, BP 612\n'
-            '50100 Cherbourg-en-Cotentin',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              height: 1.55,
-              fontSize: 13,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

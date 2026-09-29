@@ -23,7 +23,7 @@ Android ne nécessite pas d'autre fichier Firebase côté application. Le servic
 
 ### iOS
 
-- bundle ID : `cloud.wevox.cec2026.cec2026`
+- bundle ID : `net.wevox.cec.cec` (identifiant de l'app publiee, verifie le 28/09/2026)
 - entitlement APNs présent dans `ios/Runner/Runner.entitlements`
 - environnement APNs : `development` en Debug, `production` en Profile/Release
 - modes `fetch` et `remote-notification` déclarés
@@ -84,12 +84,14 @@ php artisan config:cache
 
 ## Configuration iOS et APNs
 
-1. Dans [Apple Developer Identifiers](https://developer.apple.com/account/resources/identifiers/list), crée ou ouvre l'App ID explicite `cloud.wevox.cec2026.cec2026`.
+**Mise à jour du 28/09/2026 :** la clé APNs de production `L7DNK7Z5A7` a été importée et vérifiée dans **CEC 2026**. L'app Apple existe déjà : `net.wevox.cec.cec`. Ne recrée pas l'app ni la clé. Voir `NOTIFICATIONS_AUDIT_2026-09-28.md` pour l'état réel et la procédure TestFlight du nouveau build **2.0.1 (21)**. La ligne développement contient une clé limitée à la production : elle ne permet pas de valider les push sandbox d'un build debug.
+
+1. Dans [Apple Developer Identifiers](https://developer.apple.com/account/resources/identifiers/list), ouvre l'App ID explicite existant `net.wevox.cec.cec` de l'equipe `6YFVLX2X38`. Ne cree pas une autre application.
 2. Active `Push Notifications`.
-3. Dans [Apple Developer Keys](https://developer.apple.com/account/resources/authkeys/list), crée une clé avec `Apple Push Notifications service (APNs)`.
-4. Télécharge le `.p8` et note son Key ID et le Team ID Apple.
-5. Dans [Firebase Cloud Messaging](https://console.firebase.google.com/project/cec-2026/settings/cloudmessaging), importe le `.p8`, le Key ID et le Team ID.
-6. Dans [Firebase General Settings](https://console.firebase.google.com/project/cec-2026/settings/general), crée l'app iOS avec le bundle ID exact.
+3. Dans [Apple Developer Keys](https://developer.apple.com/account/resources/authkeys/list), vérifie la clé existante « CEC » avec `Apple Push Notifications service (APNs)` et environnement Production.
+4. Conserve son `.p8` hors de l'application et de Git. Team ID : `6YFVLX2X38`.
+5. Dans [Firebase Cloud Messaging](https://console.firebase.google.com/project/cec-2026/settings/cloudmessaging/ios:net.wevox.cec.cec), vérifie la ligne **production**, Key ID `L7DNK7Z5A7`. Import réalisé le 28/09/2026.
+6. Dans [Firebase General Settings](https://console.firebase.google.com/project/cec-2026/settings/general), ouvre l'app iOS existante avec le bundle ID exact.
 7. Télécharge `GoogleService-Info.plist`.
 8. Sur le Mac, place-le dans `ios/Runner/GoogleService-Info.plist` puis ajoute-le à la target Runner avec Xcode.
 9. Dans Xcode > Runner > Signing & Capabilities, sélectionne l'équipe, active la signature automatique et vérifie `Push Notifications` et `Background Modes`.

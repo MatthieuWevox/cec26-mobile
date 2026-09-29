@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -57,7 +58,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       _currentMember = await _api.getProfile();
       await _saveMember(_currentMember);
-      await _registerPushToken();
+      unawaited(_registerPushToken());
       NotificationService.handlePendingNavigation();
       notifyListeners();
     } on ApiException catch (error) {
@@ -95,7 +96,7 @@ class AuthProvider extends ChangeNotifier {
       if (_token != null) {
         await prefs.setString(_kTokenKey, _token!);
         await _saveMember(_currentMember);
-        await _registerPushToken();
+        unawaited(_registerPushToken());
         NotificationService.handlePendingNavigation();
       }
       _isLoading = false;
@@ -115,16 +116,18 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    if (_token != null) {
-      try {
-        await NotificationService.deleteCurrentToken(_api);
-      } catch (_) {}
-      try {
-        await _api.logout();
-      } catch (_) {}
-    }
+    final api = _api;
+    final wasLoggedIn = _token != null;
     await _clearLocalSession();
     notifyListeners();
+    if (wasLoggedIn) {
+      try {
+        await NotificationService.deleteCurrentToken(api);
+      } catch (_) {}
+      try {
+        await api.logout();
+      } catch (_) {}
+    }
   }
 
   Future<bool> updateProfile({
@@ -257,6 +260,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _clearLocalSession() async {
+    NotificationService.clearSession();
     _token = null;
     _currentMember = null;
     final prefs = await SharedPreferences.getInstance();

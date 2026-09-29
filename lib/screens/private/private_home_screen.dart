@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../models/member.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_service.dart';
+import '../../services/notification_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../legal_information_screen.dart';
@@ -30,6 +32,7 @@ class _MemberDashboard extends StatelessWidget {
     final member = auth.currentMember;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           CecPageHeader(
@@ -41,27 +44,39 @@ class _MemberDashboard extends StatelessWidget {
             trailing: MemberAvatar(
               imageUrl: member?.photoUrl,
               name: member?.fullName ?? 'Membre CEC',
-              radius: 25,
+              radius: 27,
             ),
           ),
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.only(bottom: 28),
-              children: [
-                const SectionHeader(
-                  title: 'Échanges',
-                  subtitle: 'Suivez et développez les relations du réseau.',
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      _PrimaryAction(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final horizontalPadding = constraints.maxWidth > 800
+                    ? (constraints.maxWidth - 760) / 2
+                    : 16.0;
+
+                return ListView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    0,
+                    horizontalPadding,
+                    126,
+                  ),
+                  children: [
+                    CecReveal(child: _NetworkWelcome(member: member)),
+                    const SectionHeader(
+                      title: 'Mes échanges',
+                      subtitle: 'Entretenez les relations qui font le réseau.',
+                    ),
+                    CecReveal(
+                      delay: const Duration(milliseconds: 60),
+                      child: _PrimaryAction(
                         icon: Icons.recommend_outlined,
                         title: 'Recommandations',
                         subtitle:
-                            'Consulter les reçues, les envoyées ou en créer une',
-                        accent: AppTheme.primaryColor,
+                            'Consultez les reçues, les envoyées ou créez-en une.',
+                        accent: AppTheme.accentColor,
+                        dark: true,
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -69,12 +84,15 @@ class _MemberDashboard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      _PrimaryAction(
+                    ),
+                    const SizedBox(height: 12),
+                    CecReveal(
+                      delay: const Duration(milliseconds: 110),
+                      child: _PrimaryAction(
                         icon: Icons.handshake_outlined,
                         title: 'Remerciements',
                         subtitle:
-                            'Valoriser une affaire réalisée grâce au réseau',
+                            'Valorisez les affaires réalisées grâce au réseau.',
                         accent: AppTheme.accentDark,
                         onTap: () => Navigator.push(
                           context,
@@ -83,83 +101,104 @@ class _MemberDashboard extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SectionHeader(
-                  title: 'Mon compte',
-                  subtitle: 'Gardez vos informations à jour.',
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _AccountAction(
-                          icon: Icons.person_outline_rounded,
-                          label: 'Mon profil',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ProfileScreen(),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _AccountAction(
-                          icon: Icons.apartment_outlined,
-                          label: 'Mon entreprise',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ProfileScreen(
-                                initialTab: ProfileTab.company,
+                    ),
+                    const SectionHeader(
+                      title: 'Mon compte',
+                      subtitle: 'Une présence claire, toujours à jour.',
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _AccountAction(
+                            icon: Icons.person_outline_rounded,
+                            label: 'Mon profil',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProfileScreen(),
                               ),
                             ),
                           ),
                         ),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: _AccountAction(
+                            icon: Icons.apartment_outlined,
+                            label: 'Mon entreprise',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProfileScreen(
+                                  initialTab: ProfileTab.company,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (member != null) ...[
+                      const SectionHeader(
+                        title: 'Visibilité du profil',
+                        subtitle:
+                            'Un profil complet facilite les mises en relation.',
                       ),
+                      _ProfileSummary(member: member),
                     ],
-                  ),
-                ),
-                if (member != null) ...[
-                  const SectionHeader(
-                    title: 'Profil',
-                    subtitle:
-                        'Un profil complet facilite les mises en relation.',
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _ProfileSummary(member: member),
-                  ),
-                ],
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LegalInformationScreen(),
+                    const SizedBox(height: 22),
+                    ValueListenableBuilder<PushRegistrationStatus>(
+                      valueListenable: NotificationService.registrationStatus,
+                      builder: (context, status, _) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.notifications_outlined),
+                        title: const Text('Notifications'),
+                        subtitle: Text(switch (status) {
+                          PushRegistrationStatus.registered =>
+                            'Appareil enregistré',
+                          PushRegistrationStatus.registering =>
+                            'Connexion en cours...',
+                          PushRegistrationStatus.denied =>
+                            'Autorisation à vérifier dans les réglages du téléphone',
+                          PushRegistrationStatus.retryPending =>
+                            'Enregistrement en attente',
+                          PushRegistrationStatus.idle => 'À activer',
+                        }),
+                        trailing: IconButton(
+                          tooltip: 'Vérifier les notifications',
+                          icon: const Icon(Icons.refresh_rounded),
+                          onPressed:
+                              status == PushRegistrationStatus.registering
+                              ? null
+                              : () =>
+                                    NotificationService.requestPermissionAndRegister(
+                                      ApiService(authToken: auth.token),
+                                    ),
+                        ),
                       ),
                     ),
-                    icon: const Icon(Icons.info_outline_rounded),
-                    label: const Text('À propos, confidentialité et aide'),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmLogout(context),
-                    icon: const Icon(Icons.logout_rounded),
-                    label: const Text('Se déconnecter'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorColor,
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LegalInformationScreen(),
+                        ),
+                      ),
+                      icon: const Icon(Icons.info_outline_rounded),
+                      label: const Text('Confidentialité et assistance'),
                     ),
-                  ),
-                ),
-              ],
+                    const SizedBox(height: 11),
+                    TextButton.icon(
+                      onPressed: () => _confirmLogout(context),
+                      icon: const Icon(Icons.logout_rounded),
+                      label: const Text('Se déconnecter'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.errorColor,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -171,6 +210,7 @@ class _MemberDashboard extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.logout_rounded, color: AppTheme.errorColor),
         title: const Text('Se déconnecter ?'),
         content: const Text(
           'Vous devrez saisir à nouveau vos identifiants pour accéder à votre espace.',
@@ -198,12 +238,68 @@ class _MemberDashboard extends StatelessWidget {
   }
 }
 
+class _NetworkWelcome extends StatelessWidget {
+  final Member? member;
+
+  const _NetworkWelcome({required this.member});
+
+  @override
+  Widget build(BuildContext context) {
+    return CecGlassPanel(
+      padding: const EdgeInsets.all(17),
+      child: Row(
+        children: [
+          Container(
+            width: 45,
+            height: 45,
+            decoration: BoxDecoration(
+              gradient: AppTheme.accentGradient,
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+            ),
+            child: const Icon(
+              Icons.waving_hand_outlined,
+              color: AppTheme.primaryDark,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Heureux de vous revoir',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  member?.company?.nom ??
+                      'Retrouvez toute l’activité de votre réseau.',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const CecBadge(
+            label: 'MEMBRE',
+            color: AppTheme.successColor,
+            icon: Icons.verified_rounded,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PrimaryAction extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final Color accent;
   final VoidCallback onTap;
+  final bool dark;
 
   const _PrimaryAction({
     required this.icon,
@@ -211,47 +307,80 @@ class _PrimaryAction extends StatelessWidget {
     required this.subtitle,
     required this.accent,
     required this.onTap,
+    this.dark = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return CecSurface(
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: accent.withAlpha(20),
-              borderRadius: BorderRadius.circular(AppTheme.radius),
-            ),
-            child: Icon(icon, color: accent, size: 23),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
+    final foreground = dark ? Colors.white : AppTheme.textPrimary;
+    final secondary = dark
+        ? Colors.white.withAlpha(174)
+        : AppTheme.textSecondary;
+
+    return CecLayeredCard(
+      child: CecSurface(
+        onTap: onTap,
+        color: dark ? AppTheme.primaryColor : Colors.white,
+        borderColor: dark
+            ? Colors.white.withAlpha(24)
+            : AppTheme.primaryColor.withAlpha(18),
+        boxShadow: AppTheme.softShadow,
+        padding: const EdgeInsets.all(17),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: dark ? Colors.white.withAlpha(18) : accent.withAlpha(18),
+                borderRadius: BorderRadius.circular(AppTheme.radius),
+                border: Border.all(
+                  color: dark
+                      ? Colors.white.withAlpha(26)
+                      : accent.withAlpha(28),
                 ),
-              ],
+              ),
+              child: Icon(icon, color: accent, size: 24),
             ),
-          ),
-          const SizedBox(width: 10),
-          const Icon(
-            Icons.arrow_forward_rounded,
-            color: AppTheme.primaryColor,
-            size: 19,
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleLarge?.copyWith(color: foreground),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: secondary),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: dark ? Colors.white.withAlpha(16) : AppTheme.accentSoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                color: dark ? Colors.white : AppTheme.primaryColor,
+                size: 17,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -272,17 +401,27 @@ class _AccountAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return CecSurface(
       onTap: onTap,
+      glass: true,
       padding: const EdgeInsets.all(15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppTheme.accentDark, size: 24),
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppTheme.accentSoft,
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+            ),
+            child: Icon(icon, color: AppTheme.accentDark, size: 20),
+          ),
           const SizedBox(height: 15),
           Row(
             children: [
               Expanded(
                 child: Text(
                   label,
+                  maxLines: 2,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -318,6 +457,7 @@ class _ProfileSummary extends StatelessWidget {
     final progress = completed / 7;
 
     return CecSurface(
+      glass: true,
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,12 +477,12 @@ class _ProfileSummary extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 13),
           ClipRRect(
             borderRadius: BorderRadius.circular(3),
             child: LinearProgressIndicator(
               value: progress,
-              minHeight: 6,
+              minHeight: 7,
               backgroundColor: AppTheme.surfaceMuted,
               valueColor: const AlwaysStoppedAnimation(AppTheme.accentColor),
             ),

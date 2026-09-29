@@ -57,7 +57,7 @@ class _ThanksScreenState extends State<ThanksScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: CecGlassAppBar(
         title: const Text('Remerciements'),
         bottom: TabBar(
           controller: _tabController,
@@ -67,20 +67,22 @@ class _ThanksScreenState extends State<ThanksScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _ThanksList(
-            future: _received,
-            isReceived: true,
-            onHidden: () => setState(_load),
-          ),
-          _ThanksList(
-            future: _sent,
-            isReceived: false,
-            onHidden: () => setState(_load),
-          ),
-        ],
+      body: CecBackground(
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _ThanksList(
+              future: _received,
+              isReceived: true,
+              onHidden: () => setState(_load),
+            ),
+            _ThanksList(
+              future: _sent,
+              isReceived: false,
+              onHidden: () => setState(_load),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateDialog(context),
@@ -94,6 +96,7 @@ class _ThanksScreenState extends State<ThanksScreen>
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: false,
       backgroundColor: Colors.transparent,
       builder: (ctx) =>
           CreateThanksSheet(onCreated: () => setState(() => _load())),
@@ -132,15 +135,26 @@ class _ThanksList extends StatelessWidget {
             icon: Icons.handshake_outlined,
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-          itemCount: items.length,
-          itemBuilder: (context, index) => _ThanksCard(
-            thanks: items[index],
-            isReceived: isReceived,
-            onHidden: onHidden,
-          ),
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final horizontal = constraints.maxWidth > 760
+                ? (constraints.maxWidth - 720) / 2
+                : 16.0;
+            return ListView.separated(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(horizontal, 18, horizontal, 108),
+              itemCount: items.length,
+              itemBuilder: (context, index) => CecReveal(
+                delay: Duration(milliseconds: index.clamp(0, 5) * 45),
+                child: _ThanksCard(
+                  thanks: items[index],
+                  isReceived: isReceived,
+                  onHidden: onHidden,
+                ),
+              ),
+              separatorBuilder: (_, __) => const SizedBox(height: 11),
+            );
+          },
         );
       },
     );
@@ -185,6 +199,7 @@ class _ThanksCard extends StatelessWidget {
     final otherMember = isReceived ? thanks.remerciant : thanks.remercie;
 
     return CecSurface(
+      glass: true,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,13 +391,10 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppTheme.radius),
-          ),
-        ),
+      child: CecGlassPanel(
+        color: Colors.white.withAlpha(240),
+        blur: 24,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
         child: Form(
           key: _formKey,

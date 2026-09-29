@@ -46,116 +46,179 @@ class _MembersScreenState extends State<MembersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          CecPageHeader(
-            eyebrow: 'Le réseau CEC',
-            title: 'Membres',
-            subtitle: 'Retrouvez les entrepreneurs et entrepreneuses du club.',
-            icon: Icons.people_alt_rounded,
-            trailing: Tooltip(
-              message: 'Fermer',
-              child: IconButton.filled(
+      body: CecBackground(
+        child: Column(
+          children: [
+            CecPageHeader(
+              eyebrow: 'Le réseau CEC',
+              title: 'Membres',
+              subtitle: 'Les personnes derrière les entreprises du territoire.',
+              icon: Icons.people_alt_rounded,
+              contentMaxWidth: 1040,
+              trailing: CecGlassIconButton(
+                icon: Icons.close_rounded,
+                tooltip: 'Fermer',
+                dark: false,
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppTheme.primaryColor,
-                  fixedSize: const Size(46, 46),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radius),
-                  ),
-                ),
               ),
             ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<Member>>(
-              future: _future,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CecLoadingWidget(
-                    message: 'Chargement des membres...',
-                  );
-                }
-                if (snapshot.hasError) {
-                  return CecErrorWidget(
-                    message: snapshot.error.toString(),
-                    onRetry: () => setState(_load),
-                  );
-                }
+            Expanded(
+              child: FutureBuilder<List<Member>>(
+                future: _future,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CecLoadingWidget(
+                      message: 'Chargement des membres...',
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return CecErrorWidget(
+                      message: snapshot.error.toString(),
+                      onRetry: () => setState(_load),
+                    );
+                  }
 
-                final all = snapshot.data ?? [];
-                final query = _search.trim().toLowerCase();
-                final items = query.isEmpty
-                    ? all
-                    : all.where((member) {
-                        return member.fullName.toLowerCase().contains(query) ||
-                            (member.company?.nom ?? '').toLowerCase().contains(
-                              query,
-                            ) ||
-                            (member.presentation ?? '').toLowerCase().contains(
-                              query,
-                            );
-                      }).toList();
+                  final all = snapshot.data ?? [];
+                  final query = _search.trim().toLowerCase();
+                  final items = query.isEmpty
+                      ? all
+                      : all.where((member) {
+                          return member.fullName.toLowerCase().contains(
+                                query,
+                              ) ||
+                              (member.company?.nom ?? '')
+                                  .toLowerCase()
+                                  .contains(query) ||
+                              (member.presentation ?? '')
+                                  .toLowerCase()
+                                  .contains(query);
+                        }).toList();
 
-                return RefreshIndicator(
-                  color: AppTheme.primaryColor,
-                  onRefresh: _refresh,
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CecSearchField(
-                                hintText: 'Nom, entreprise ou expertise',
-                                onChanged: (value) {
-                                  setState(() => _search = value);
-                                },
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 900;
+                      final horizontalPadding = wide
+                          ? (constraints.maxWidth - 1040).clamp(20.0, 80.0)
+                          : 16.0;
+
+                      return RefreshIndicator(
+                        color: AppTheme.primaryColor,
+                        onRefresh: _refresh,
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                          slivers: [
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  horizontalPadding,
+                                  0,
+                                  horizontalPadding,
+                                  16,
+                                ),
+                                child: CecReveal(
+                                  child: Padding(
+                                    padding: EdgeInsets.zero,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        CecSearchField(
+                                          hintText:
+                                              'Nom, entreprise ou expertise',
+                                          onChanged: (value) {
+                                            setState(() => _search = value);
+                                          },
+                                        ),
+                                        const SizedBox(height: 9),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 4,
+                                          ),
+                                          child: Text(
+                                            '${items.length} membre${items.length > 1 ? 's' : ''}',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
-                              const SizedBox(height: 13),
-                              Text(
-                                '${items.length} membre${items.length > 1 ? 's' : ''}',
-                                style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            if (items.isEmpty)
+                              const SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: CecEmptyWidget(
+                                  message:
+                                      'Aucun membre ne correspond à la recherche.',
+                                  icon: Icons.person_search_rounded,
+                                ),
+                              )
+                            else if (wide)
+                              SliverPadding(
+                                padding: EdgeInsets.fromLTRB(
+                                  horizontalPadding,
+                                  0,
+                                  horizontalPadding,
+                                  38,
+                                ),
+                                sliver: SliverGrid.builder(
+                                  itemCount: items.length,
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: 14,
+                                        mainAxisSpacing: 14,
+                                        mainAxisExtent: 112,
+                                      ),
+                                  itemBuilder: (_, index) => CecReveal(
+                                    delay: Duration(
+                                      milliseconds: index.clamp(0, 5) * 40,
+                                    ),
+                                    child: _MemberCard(
+                                      member: items[index],
+                                      onHidden: () => setState(_load),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding: EdgeInsets.fromLTRB(
+                                  horizontalPadding,
+                                  0,
+                                  horizontalPadding,
+                                  38,
+                                ),
+                                sliver: SliverList.separated(
+                                  itemCount: items.length,
+                                  itemBuilder: (_, index) => CecReveal(
+                                    delay: Duration(
+                                      milliseconds: index.clamp(0, 5) * 40,
+                                    ),
+                                    child: _MemberCard(
+                                      member: items[index],
+                                      onHidden: () => setState(_load),
+                                    ),
+                                  ),
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(height: 11),
+                                ),
                               ),
-                            ],
-                          ),
+                          ],
                         ),
-                      ),
-                      if (items.isEmpty)
-                        const SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: CecEmptyWidget(
-                            message:
-                                'Aucun membre ne correspond à la recherche.',
-                            icon: Icons.person_search_rounded,
-                          ),
-                        )
-                      else
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-                          sliver: SliverList.separated(
-                            itemCount: items.length,
-                            itemBuilder: (_, index) {
-                              return _MemberCard(
-                                member: items[index],
-                                onHidden: () => setState(_load),
-                              );
-                            },
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 10),
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -177,18 +240,22 @@ class _MemberCard extends StatelessWidget {
         );
         if (hidden == true) onHidden();
       },
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          MemberAvatar(
-            imageUrl: member.photoUrl,
-            name: member.fullName,
-            radius: 29,
+          Hero(
+            tag: 'member-avatar-${member.id}',
+            child: MemberAvatar(
+              imageUrl: member.photoUrl,
+              name: member.fullName,
+              radius: 29,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -205,11 +272,12 @@ class _MemberCard extends StatelessWidget {
                     color: AppTheme.accentDark,
                   ),
                 ],
-                if (member.presentation?.isNotEmpty ?? false) ...[
-                  const SizedBox(height: 7),
+                if (member.company == null &&
+                    (member.presentation?.isNotEmpty ?? false)) ...[
+                  const SizedBox(height: 4),
                   Text(
                     member.presentation!,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -217,7 +285,7 @@ class _MemberCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           const Icon(
             Icons.arrow_forward_rounded,
             color: AppTheme.primaryColor,

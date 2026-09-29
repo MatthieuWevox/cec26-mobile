@@ -37,6 +37,8 @@ class CecApp extends StatelessWidget {
         title: 'CEC 2026',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        themeAnimationDuration: AppTheme.motion,
+        themeAnimationCurve: AppTheme.motionCurve,
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,

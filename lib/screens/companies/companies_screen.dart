@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/member.dart';
@@ -56,27 +57,20 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           CecPageHeader(
             eyebrow: 'Annuaire professionnel',
             title: 'Entreprises',
-            subtitle: 'Découvrez les savoir-faire qui font vivre le Cotentin.',
+            subtitle: 'Les savoir-faire et les talents du Cotentin.',
             icon: Icons.apartment_rounded,
-            trailing: Tooltip(
-              message: 'Voir les membres',
-              child: IconButton.filled(
-                onPressed: _openMembers,
-                icon: const Icon(Icons.people_alt_outlined),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppTheme.primaryColor,
-                  fixedSize: const Size(46, 46),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radius),
-                  ),
-                ),
-              ),
+            contentMaxWidth: 1040,
+            trailing: CecGlassIconButton(
+              icon: Icons.people_alt_outlined,
+              tooltip: 'Voir les membres',
+              dark: false,
+              onPressed: _openMembers,
             ),
           ),
           Expanded(
@@ -109,73 +103,144 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                             );
                       }).toList();
 
-                return RefreshIndicator(
-                  color: AppTheme.primaryColor,
-                  onRefresh: _refresh,
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
-                          child: Column(
-                            children: [
-                              CecSearchField(
-                                hintText: 'Nom, activité ou spécialité',
-                                onChanged: (value) {
-                                  setState(() => _search = value);
-                                },
-                              ),
-                              const SizedBox(height: 13),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      '${items.length} entreprise${items.length > 1 ? 's' : ''}',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall,
-                                    ),
-                                  ),
-                                  TextButton.icon(
-                                    onPressed: _openMembers,
-                                    icon: const Icon(
-                                      Icons.people_alt_outlined,
-                                      size: 17,
-                                    ),
-                                    label: const Text('Membres'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final wide = constraints.maxWidth >= 900;
+                    final horizontalPadding = wide
+                        ? (constraints.maxWidth - 1040).clamp(20.0, 80.0)
+                        : 16.0;
+                    final companyCardExtent = wide
+                        ? ((constraints.maxWidth -
+                                          (horizontalPadding * 2) -
+                                          14) /
+                                      2) *
+                                  (5.8 / 16) +
+                              140
+                        : null;
+
+                    return RefreshIndicator(
+                      color: AppTheme.primaryColor,
+                      onRefresh: _refresh,
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
                         ),
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                horizontalPadding,
+                                0,
+                                horizontalPadding,
+                                16,
+                              ),
+                              child: CecReveal(
+                                child: Padding(
+                                  padding: EdgeInsets.zero,
+                                  child: Column(
+                                    children: [
+                                      CecSearchField(
+                                        hintText: 'Nom, activité ou spécialité',
+                                        onChanged: (value) {
+                                          setState(() => _search = value);
+                                        },
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 4,
+                                              ),
+                                              child: Text(
+                                                '${items.length} entreprise${items.length > 1 ? 's' : ''}',
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall,
+                                              ),
+                                            ),
+                                          ),
+                                          TextButton.icon(
+                                            onPressed: _openMembers,
+                                            icon: const Icon(
+                                              Icons.people_alt_outlined,
+                                              size: 17,
+                                            ),
+                                            label: const Text('Membres'),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (items.isEmpty)
+                            const SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: CecEmptyWidget(
+                                message:
+                                    'Aucune entreprise ne correspond à la recherche.',
+                                icon: Icons.search_off_rounded,
+                              ),
+                            )
+                          else if (wide)
+                            SliverPadding(
+                              padding: EdgeInsets.fromLTRB(
+                                horizontalPadding,
+                                0,
+                                horizontalPadding,
+                                126,
+                              ),
+                              sliver: SliverGrid.builder(
+                                itemCount: items.length,
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 14,
+                                      mainAxisSpacing: 14,
+                                      mainAxisExtent: companyCardExtent,
+                                    ),
+                                itemBuilder: (_, index) => CecReveal(
+                                  delay: Duration(
+                                    milliseconds: index.clamp(0, 5) * 45,
+                                  ),
+                                  child: _CompanyCard(
+                                    company: items[index],
+                                    onHidden: () => setState(_load),
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            SliverPadding(
+                              padding: EdgeInsets.fromLTRB(
+                                horizontalPadding,
+                                0,
+                                horizontalPadding,
+                                126,
+                              ),
+                              sliver: SliverList.separated(
+                                itemCount: items.length,
+                                itemBuilder: (_, index) => CecReveal(
+                                  delay: Duration(
+                                    milliseconds: index.clamp(0, 5) * 45,
+                                  ),
+                                  child: _CompanyCard(
+                                    company: items[index],
+                                    onHidden: () => setState(_load),
+                                  ),
+                                ),
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 12),
+                              ),
+                            ),
+                        ],
                       ),
-                      if (items.isEmpty)
-                        const SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: CecEmptyWidget(
-                            message:
-                                'Aucune entreprise ne correspond à la recherche.',
-                            icon: Icons.search_off_rounded,
-                          ),
-                        )
-                      else
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-                          sliver: SliverList.separated(
-                            itemCount: items.length,
-                            itemBuilder: (_, index) {
-                              return _CompanyCard(
-                                company: items[index],
-                                onHidden: () => setState(_load),
-                              );
-                            },
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 10),
-                          ),
-                        ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),
@@ -195,103 +260,129 @@ class _CompanyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final memberCount = company.members?.length ?? 0;
+    final hasPhoto = company.photoUrl?.isNotEmpty ?? false;
 
-    return CecSurface(
-      padding: EdgeInsets.zero,
-      onTap: () async {
-        final hidden = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CompanyDetailScreen(company: company),
-          ),
-        );
-        if (hidden == true) onHidden();
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (company.photoUrl != null && company.photoUrl!.isNotEmpty)
-            AspectRatio(
-              aspectRatio: 16 / 5.5,
-              child: Image.network(
-                company.photoUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const ColoredBox(
-                  color: AppTheme.surfaceMuted,
-                  child: Center(
-                    child: Icon(
-                      Icons.image_not_supported_outlined,
-                      color: AppTheme.textSecondary,
+    return CecLayeredCard(
+      child: CecSurface(
+        padding: EdgeInsets.zero,
+        onTap: () async {
+          final hidden = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CompanyDetailScreen(company: company),
+            ),
+          );
+          if (hidden == true) onHidden();
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 28),
+                  child: SizedBox(
+                    height: 112,
+                    width: double.infinity,
+                    child: hasPhoto
+                        ? CachedNetworkImage(
+                            imageUrl: company.photoUrl!,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) =>
+                                const _CompanyFallback(),
+                          )
+                        : const _CompanyFallback(),
+                  ),
+                ),
+                Positioned(
+                  left: 18,
+                  bottom: 0,
+                  child: Hero(
+                    tag: 'company-logo-${company.id}',
+                    child: CompanyLogo(
+                      logoUrl: company.logoUrl,
+                      companyName: company.nom,
+                      size: 64,
                     ),
                   ),
                 ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Hero(
-                  tag: 'company-logo-${company.id}',
-                  child: CompanyLogo(
-                    logoUrl: company.logoUrl,
-                    companyName: company.nom,
-                    size: 58,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        company.nom,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      if (company.sousTitre?.isNotEmpty ?? false) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          company.sousTitre!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                      if (company.activites?.isNotEmpty ?? false) ...[
-                        const SizedBox(height: 9),
-                        CecBadge(
-                          label: company.activites!,
-                          color: AppTheme.accentDark,
-                          icon: Icons.sell_outlined,
-                        ),
-                      ],
-                      const SizedBox(height: 11),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CecMeta(
-                              icon: Icons.people_outline_rounded,
-                              text:
-                                  '$memberCount membre${memberCount > 1 ? 's' : ''}',
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_rounded,
-                            color: AppTheme.primaryColor,
-                            size: 18,
-                          ),
-                        ],
-                      ),
-                    ],
+                Positioned(
+                  right: 18,
+                  top: 15,
+                  child: CecBadge(
+                    label: '$memberCount membre${memberCount > 1 ? 's' : ''}',
+                    color: AppTheme.primaryColor,
+                    icon: Icons.people_outline_rounded,
                   ),
                 ),
               ],
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    company.nom,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  if (company.sousTitre?.isNotEmpty ?? false) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      company.sousTitre!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  const Divider(height: 1),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Découvrir l’entreprise',
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(color: AppTheme.primaryColor),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 19,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompanyFallback extends StatelessWidget {
+  const _CompanyFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: AppTheme.accentSoft,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Icon(
+            Icons.apartment_outlined,
+            color: AppTheme.accentDark.withAlpha(100),
+            size: 42,
           ),
-        ],
+        ),
       ),
     );
   }

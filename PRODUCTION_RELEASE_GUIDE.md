@@ -2,6 +2,8 @@
 
 Dernière vérification technique : 5 septembre 2026.
 
+**Actualisation notifications du 28 septembre 2026 :** consulter [le rapport et la recette notifications](NOTIFICATIONS_AUDIT_2026-09-28.md) avant de suivre les anciennes étapes Firebase/iOS ci-dessous. Le backoffice est déployé, la clé APNs de production est maintenant importée, et l'app iOS existante est `net.wevox.cec.cec`, équipe `6YFVLX2X38`. La version mobile préparée est **2.0.1 (21)**. Ne pas recréer d'application ni de clé ; la validation sur iPhone et la compilation sur Mac restent à effectuer.
+
 Ce document part du code présent dans :
 
 - application mobile Flutter : `C:\Users\Matthieu\StudioProjects\cec2026`
@@ -34,7 +36,7 @@ Le bundle Android ne doit pas être envoyé en production tant que ce déploieme
 | Version | `1.0.0` |
 | Numéro de build initial | `1` |
 | Package Android | `cloud.wevox.cec2026.cec2026` |
-| Bundle ID iOS | `cloud.wevox.cec2026.cec2026` |
+| Bundle ID iOS | `net.wevox.cec.cec` (app publiee, equipe `6YFVLX2X38`) |
 | Projet Firebase | `cec-2026` |
 | Site / URL marketing / URL d'assistance | `https://cec.wevox.cloud/application/` |
 | Politique de confidentialité | `https://cec.wevox.cloud/application/confidentialite.html` |
@@ -323,7 +325,7 @@ Android est opérationnel, mais iOS n'est pas prêt tant que les étapes suivant
 3. Choisis `App IDs`, puis `Continue`.
 4. Choisis `App`, puis `Continue`.
 5. Description : `CEC 2026`.
-6. Bundle ID : choisis `Explicit` et saisis `cloud.wevox.cec2026.cec2026`.
+6. Bundle ID : utilise l'identifiant explicite existant `net.wevox.cec.cec` ; l'application est deja publiee.
 7. Dans Capabilities, coche `Push Notifications`.
 8. Clique sur `Continue`, vérifie puis `Register`.
 
@@ -353,7 +355,7 @@ Fichier APNs .p8 : [À CRÉER ET SAUVEGARDER]
 
 1. Ouvre [Firebase > Paramètres généraux du projet cec-2026](https://console.firebase.google.com/project/cec-2026/settings/general).
 2. Dans `Vos applications`, clique sur l'icône iOS `+` si l'application iOS n'existe pas.
-3. Apple bundle ID : `cloud.wevox.cec2026.cec2026`.
+3. Apple bundle ID : `net.wevox.cec.cec`.
 4. Surnom : `CEC 2026 iOS`.
 5. App Store ID : laisse vide jusqu'à la création de la fiche App Store Connect.
 6. Clique sur `Enregistrer l'application`.
@@ -400,7 +402,7 @@ open ios/Runner.xcworkspace
 5. Ouvre `Signing & Capabilities`.
 6. Coche `Automatically manage signing`.
 7. Dans `Team`, sélectionne le vrai compte Apple Developer.
-8. Vérifie `Bundle Identifier = cloud.wevox.cec2026.cec2026`.
+8. Vérifie `Bundle Identifier = net.wevox.cec.cec`.
 9. Clique sur `+ Capability` et ajoute `Push Notifications` si absent.
 10. Ajoute `Background Modes` si absent.
 11. Dans `Background Modes`, coche `Background fetch` et `Remote notifications`.
@@ -806,7 +808,7 @@ Statut trader validé par le titulaire : [À CONFIRMER]
 3. Plateformes : coche `iOS`.
 4. Nom : `CEC 2026`.
 5. Langue principale : `French`.
-6. Bundle ID : sélectionne `cloud.wevox.cec2026.cec2026`.
+6. Bundle ID : sélectionne `net.wevox.cec.cec`.
 7. SKU : saisis `CEC2026-IOS-001`.
 8. Accès utilisateur : `Full Access` sauf politique interne contraire.
 9. Clique sur `Create`.

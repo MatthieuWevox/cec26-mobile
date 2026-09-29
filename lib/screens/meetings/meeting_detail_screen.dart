@@ -11,6 +11,7 @@ import '../../widgets/common_widgets.dart';
 
 class MeetingDetailScreen extends StatefulWidget {
   final Meeting meeting;
+
   const MeetingDetailScreen({super.key, required this.meeting});
 
   @override
@@ -46,9 +47,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
     final auth = context.read<AuthProvider>();
     if (!auth.isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Connectez-vous pour inviter quelqu\'un.'),
-        ),
+        const SnackBar(content: Text('Connectez-vous pour inviter quelqu’un.')),
       );
       return;
     }
@@ -61,84 +60,88 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: false,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
+      builder: (sheetContext) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
           ),
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(AppTheme.radius),
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-            child: Form(
-              key: _guestFormKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppTheme.dividerColor,
-                          borderRadius: BorderRadius.circular(2),
+          child: CecGlassPanel(
+            color: Colors.white.withAlpha(238),
+            blur: 24,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 30),
+            child: SafeArea(
+              top: false,
+              child: Form(
+                key: _guestFormKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 42,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceStrong,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Ajouter un invité',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                      const SizedBox(height: 20),
+                      Text(
+                        'Ajouter un invité',
+                        style: Theme.of(context).textTheme.headlineMedium,
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    TextFormField(
-                      controller: _guestPrenomCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Prénom *',
-                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Ajoutez une personne à cette rencontre.',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Champ requis'
-                          : null,
-                      textCapitalization: TextCapitalization.words,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _guestNomCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Nom *',
-                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      const SizedBox(height: 22),
+                      TextFormField(
+                        controller: _guestPrenomCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Prénom *',
+                          prefixIcon: Icon(Icons.person_outline_rounded),
+                        ),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                            ? 'Champ requis'
+                            : null,
+                        textCapitalization: TextCapitalization.words,
                       ),
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Champ requis'
-                          : null,
-                      textCapitalization: TextCapitalization.characters,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _guestEntrepriseCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Entreprise',
-                        prefixIcon: Icon(Icons.business_rounded),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _guestNomCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Nom *',
+                          prefixIcon: Icon(Icons.person_outline_rounded),
+                        ),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                            ? 'Champ requis'
+                            : null,
+                        textCapitalization: TextCapitalization.characters,
                       ),
-                      textCapitalization: TextCapitalization.words,
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (_guestFormKey.currentState!.validate()) {
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _guestEntrepriseCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Entreprise',
+                          prefixIcon: Icon(Icons.business_rounded),
+                        ),
+                        textCapitalization: TextCapitalization.words,
+                      ),
+                      const SizedBox(height: 22),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            if (!_guestFormKey.currentState!.validate()) return;
                             try {
                               final api = ApiService(authToken: auth.token);
                               final guestData = await api.addGuestToMeeting(
@@ -154,28 +157,31 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                               setState(() {
                                 _meeting.guests.add(Guest.fromJson(guestData));
                               });
-                              if (ctx.mounted) Navigator.pop(ctx);
-                              if (ctx.mounted) {
-                                ScaffoldMessenger.of(ctx).showSnackBar(
+                              if (sheetContext.mounted) {
+                                Navigator.pop(sheetContext);
+                              }
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Invité ajouté avec succès.'),
                                     backgroundColor: AppTheme.successColor,
                                   ),
                                 );
                               }
-                            } on ApiException catch (e) {
-                              if (ctx.mounted) {
-                                ScaffoldMessenger.of(ctx).showSnackBar(
-                                  SnackBar(content: Text(e.message)),
+                            } on ApiException catch (error) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error.message)),
                                 );
                               }
                             }
-                          }
-                        },
-                        child: const Text('Ajouter l\'invité'),
+                          },
+                          icon: const Icon(Icons.person_add_rounded, size: 19),
+                          label: const Text('Ajouter l’invité'),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -198,138 +204,172 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 100,
-            pinned: true,
-            backgroundColor: AppTheme.primaryDark,
-            foregroundColor: Colors.white,
-            iconTheme: const IconThemeData(color: Colors.white),
-            systemOverlayStyle: SystemUiOverlayStyle.light,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                _formattedDate,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+      body: CecBackground(
+        accentTop: false,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 210,
+              pinned: true,
+              stretch: true,
+              toolbarHeight: 64,
+              backgroundColor: AppTheme.primaryDark,
+              foregroundColor: Colors.white,
+              automaticallyImplyLeading: false,
+              leadingWidth: 68,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+                child: CecGlassIconButton(
+                  icon: Icons.arrow_back_rounded,
+                  tooltip: 'Retour',
+                  dark: true,
+                  onPressed: () => Navigator.pop(context),
                 ),
               ),
-              titlePadding: const EdgeInsets.fromLTRB(56, 0, 16, 16),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Meeting info card
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(AppTheme.radius),
-                      boxShadow: AppTheme.cardShadow,
-                    ),
-                    child: Column(
+              surfaceTintColor: Colors.transparent,
+              systemOverlayStyle: SystemUiOverlayStyle.light,
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.parallax,
+                background: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                  ),
+                  child: SafeArea(
+                    child: Stack(
                       children: [
-                        InfoRow(
-                          icon: Icons.access_time_rounded,
-                          label: 'HEURE',
-                          value: _formattedTime,
+                        Positioned(
+                          right: -28,
+                          bottom: -24,
+                          child: Icon(
+                            Icons.calendar_month_rounded,
+                            size: 150,
+                            color: AppTheme.accentColor.withAlpha(22),
+                          ),
                         ),
-                        const Divider(),
-                        InfoRow(
-                          icon: Icons.location_on_rounded,
-                          label: 'LIEU',
-                          value: _meeting.adresse,
+                        Positioned(
+                          left: 20,
+                          right: 20,
+                          bottom: 24,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const CecBadge(
+                                label: 'RENCONTRE CEC',
+                                color: AppTheme.accentDark,
+                                icon: Icons.groups_rounded,
+                                inverted: true,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                _formattedDate,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(color: Colors.white),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-
-                  // Agenda
-                  if (_meeting.ordreDuJour != null &&
-                      _meeting.ordreDuJour!.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Ordre du jour',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppTheme.accentColor.withAlpha(15),
-                            AppTheme.accentColor.withAlpha(8),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(AppTheme.radius),
-                        border: Border.all(
-                          color: AppTheme.accentColor.withAlpha(40),
-                        ),
-                      ),
-                      child: Text(
-                        _meeting.ordreDuJour!,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: AppTheme.textPrimary,
-                          height: 1.6,
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  // Guests
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Invités (${_meeting.guests.length})',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (auth.isLoggedIn)
-                        TextButton.icon(
-                          onPressed: () => _showAddGuestDialog(context),
-                          icon: const Icon(Icons.person_add_rounded, size: 16),
-                          label: const Text('Inviter'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppTheme.primaryColor,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (_meeting.guests.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text(
-                        'Aucun invité pour cette réunion.',
-                        style: TextStyle(color: AppTheme.textSecondary),
-                      ),
-                    )
-                  else
-                    ..._meeting.guests.map((g) => _GuestTile(guest: g)),
-                  const SizedBox(height: 40),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+            SliverToBoxAdapter(
+              child: CecContentWidth(
+                maxWidth: 760,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 20, 18, 104),
+                  child: CecReveal(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CecSurface(
+                          glass: true,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 5,
+                          ),
+                          child: Column(
+                            children: [
+                              InfoRow(
+                                icon: Icons.access_time_rounded,
+                                label: 'Heure',
+                                value: _formattedTime,
+                              ),
+                              const Divider(),
+                              InfoRow(
+                                icon: Icons.location_on_rounded,
+                                label: 'Lieu',
+                                value: _meeting.adresse,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_meeting.ordreDuJour != null &&
+                            _meeting.ordreDuJour!.isNotEmpty) ...[
+                          const SectionHeader(
+                            title: 'Ordre du jour',
+                            subtitle: 'Les points prévus pour cette rencontre.',
+                          ),
+                          CecSurface(
+                            color: AppTheme.accentSoft,
+                            padding: const EdgeInsets.all(18),
+                            borderColor: AppTheme.accentColor.withAlpha(44),
+                            child: Text(
+                              _meeting.ordreDuJour!,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                        ],
+                        SectionHeader(
+                          title: 'Invités',
+                          subtitle:
+                              '${_meeting.guests.length} personne${_meeting.guests.length > 1 ? 's' : ''} annoncée${_meeting.guests.length > 1 ? 's' : ''}.',
+                          trailing: auth.isLoggedIn
+                              ? TextButton.icon(
+                                  onPressed: () => _showAddGuestDialog(context),
+                                  icon: const Icon(
+                                    Icons.person_add_rounded,
+                                    size: 17,
+                                  ),
+                                  label: const Text('Inviter'),
+                                )
+                              : null,
+                        ),
+                        if (_meeting.guests.isEmpty)
+                          const CecSurface(
+                            glass: true,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.people_outline_rounded,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Aucun invité pour cette réunion.',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          for (final guest in _meeting.guests)
+                            _GuestTile(guest: guest),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: auth.isLoggedIn
           ? FloatingActionButton.extended(
@@ -344,66 +384,66 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
 
 class _GuestTile extends StatelessWidget {
   final Guest guest;
+
   const _GuestTile({required this.guest});
+
+  String get _initials {
+    final first = guest.prenom.isEmpty ? '?' : guest.prenom[0];
+    final last = guest.nom.isEmpty ? '' : guest.nom[0];
+    return '$first$last'.toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppTheme.primaryColor.withAlpha(20),
-            child: Text(
-              '${guest.prenom[0]}${guest.nom[0]}'.toUpperCase(),
-              style: const TextStyle(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  guest.fullName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: CecSurface(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: AppTheme.accentSoft,
+              child: Text(
+                _initials,
+                style: const TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  letterSpacing: 0,
                 ),
-                if (guest.nomEntreprise != null &&
-                    guest.nomEntreprise!.isNotEmpty)
-                  Text(
-                    guest.nomEntreprise!,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (guest.invitedBy != null)
-            Tooltip(
-              message: 'Invité par ${guest.invitedBy!.fullName}',
-              child: const Icon(
-                Icons.person_rounded,
-                size: 16,
-                color: AppTheme.textSecondary,
               ),
             ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    guest.fullName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  if (guest.nomEntreprise?.isNotEmpty ?? false) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      guest.nomEntreprise!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (guest.invitedBy != null)
+              Tooltip(
+                message: 'Invité par ${guest.invitedBy!.fullName}',
+                child: const Icon(
+                  Icons.person_rounded,
+                  size: 16,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/common_widgets.dart';
 import 'api_service.dart';
 import 'content_visibility_service.dart';
 
@@ -18,6 +19,7 @@ class ReportingService {
     final result = await showModalBottomSheet<_ReportResult>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: false,
       backgroundColor: Colors.transparent,
       builder: (_) => _ReportSheet(
         contentType: contentType,
@@ -162,13 +164,10 @@ class _ReportSheetState extends State<_ReportSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppTheme.radius),
-          ),
-        ),
+      child: CecGlassPanel(
+        color: Colors.white.withAlpha(232),
+        blur: 24,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
         child: SafeArea(
           top: false,
@@ -229,17 +228,20 @@ class _ReportSheetState extends State<_ReportSheet> {
                     alignLabelWithHint: true,
                   ),
                 ),
-                CheckboxListTile(
-                  value: _hideContent,
-                  onChanged: _loading
-                      ? null
-                      : (value) =>
-                            setState(() => _hideContent = value ?? false),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: const Text('Masquer ce contenu sur cet appareil'),
-                  subtitle: const Text(
-                    'Il ne sera plus affiché dans les listes de l’application.',
+                Material(
+                  type: MaterialType.transparency,
+                  child: CheckboxListTile(
+                    value: _hideContent,
+                    onChanged: _loading
+                        ? null
+                        : (value) =>
+                              setState(() => _hideContent = value ?? false),
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    title: const Text('Masquer ce contenu sur cet appareil'),
+                    subtitle: const Text(
+                      'Il ne sera plus affiché dans les listes de l’application.',
+                    ),
                   ),
                 ),
                 if (_error != null) ...[

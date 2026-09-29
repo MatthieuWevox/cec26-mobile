@@ -67,7 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: CecGlassAppBar(
         title: const Text('Mon profil'),
         bottom: TabBar(
           controller: _tabController,
@@ -78,13 +78,15 @@ class _ProfileScreenState extends State<ProfileScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          _EditProfileTab(),
-          _EditCompanyTab(),
-          _ChangePasswordTab(),
-        ],
+      body: CecBackground(
+        child: TabBarView(
+          controller: _tabController,
+          children: const [
+            _EditProfileTab(),
+            _EditCompanyTab(),
+            _ChangePasswordTab(),
+          ],
+        ),
       ),
     );
   }
@@ -152,93 +154,97 @@ class _EditProfileTabState extends State<_EditProfileTab> {
     _init(auth);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SectionHeader(
-              title: 'Informations personnelles',
-              subtitle: 'Ces informations apparaissent dans l’annuaire.',
-            ),
-            TextFormField(
-              controller: _prenomCtrl,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Prénom',
-                prefixIcon: Icon(Icons.person_outline_rounded),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 40),
+      child: CecContentWidth(
+        maxWidth: 720,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionHeader(
+                title: 'Informations personnelles',
+                subtitle: 'Ces informations apparaissent dans l’annuaire.',
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Requis' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _nomCtrl,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Nom',
-                prefixIcon: Icon(Icons.person_outline_rounded),
+              TextFormField(
+                controller: _prenomCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Prénom',
+                  prefixIcon: Icon(Icons.person_outline_rounded),
+                ),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Requis' : null,
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Requis' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _telCtrl,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Téléphone',
-                prefixIcon: Icon(Icons.phone_outlined),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _nomCtrl,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(
+                  labelText: 'Nom',
+                  prefixIcon: Icon(Icons.person_outline_rounded),
+                ),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Requis' : null,
               ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _presentationCtrl,
-              maxLines: 5,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Présentation',
-                prefixIcon: Icon(Icons.text_snippet_outlined),
-                alignLabelWithHint: true,
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _telCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Téléphone',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            _MediaPickerTile(
-              title: 'Photo de profil',
-              currentUrl: auth.currentMember?.photoUrl,
-              selectedName: _photo?.name,
-              icon: Icons.account_circle_outlined,
-              onGallery: () async {
-                final media = await _pickFromGallery();
-                if (media != null && mounted) setState(() => _photo = media);
-              },
-              onFiles: () async {
-                final media = await _pickFromFiles();
-                if (media != null && mounted) setState(() => _photo = media);
-              },
-              onClearSelection: _photo == null
-                  ? null
-                  : () => setState(() => _photo = null),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: auth.isLoading ? null : () => _save(auth),
-                child: auth.isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Enregistrer'),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _presentationCtrl,
+                maxLines: 5,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Présentation',
+                  prefixIcon: Icon(Icons.text_snippet_outlined),
+                  alignLabelWithHint: true,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              _MediaPickerTile(
+                title: 'Photo de profil',
+                currentUrl: auth.currentMember?.photoUrl,
+                selectedName: _photo?.name,
+                icon: Icons.account_circle_outlined,
+                onGallery: () async {
+                  final media = await _pickFromGallery();
+                  if (media != null && mounted) setState(() => _photo = media);
+                },
+                onFiles: () async {
+                  final media = await _pickFromFiles();
+                  if (media != null && mounted) setState(() => _photo = media);
+                },
+                onClearSelection: _photo == null
+                    ? null
+                    : () => setState(() => _photo = null),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: auth.isLoading ? null : () => _save(auth),
+                  child: auth.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Enregistrer'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -434,107 +440,111 @@ class _EditCompanyTabState extends State<_EditCompanyTab> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SectionHeader(
-              title: 'Identité de l’entreprise',
-              subtitle: 'Présentez clairement votre activité aux membres.',
-            ),
-            TextFormField(
-              controller: _nomCtrl,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Nom de l\'entreprise',
-                prefixIcon: Icon(Icons.business_outlined),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 40),
+      child: CecContentWidth(
+        maxWidth: 720,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionHeader(
+                title: 'Identité de l’entreprise',
+                subtitle: 'Présentez clairement votre activité aux membres.',
               ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _sousTitreCtrl,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Sous-titre / accroche',
-                prefixIcon: Icon(Icons.title_rounded),
+              TextFormField(
+                controller: _nomCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Nom de l\'entreprise',
+                  prefixIcon: Icon(Icons.business_outlined),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _activitesCtrl,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Activités',
-                prefixIcon: Icon(Icons.work_outline_rounded),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _sousTitreCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Sous-titre / accroche',
+                  prefixIcon: Icon(Icons.title_rounded),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _descriptionCtrl,
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                prefixIcon: Icon(Icons.text_snippet_outlined),
-                alignLabelWithHint: true,
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _activitesCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Activités',
+                  prefixIcon: Icon(Icons.work_outline_rounded),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            _MediaPickerTile(
-              title: 'Logo',
-              currentUrl: auth.currentMember?.company?.logoUrl,
-              selectedName: _logo?.name,
-              icon: Icons.image_outlined,
-              onGallery: () async {
-                final media = await _pickFromGallery();
-                if (media != null && mounted) setState(() => _logo = media);
-              },
-              onFiles: () async {
-                final media = await _pickFromFiles();
-                if (media != null && mounted) setState(() => _logo = media);
-              },
-              onClearSelection: _logo == null
-                  ? null
-                  : () => setState(() => _logo = null),
-            ),
-            const SizedBox(height: 12),
-            _MediaPickerTile(
-              title: 'Banniere / photo',
-              currentUrl: auth.currentMember?.company?.photoUrl,
-              selectedName: _banner?.name,
-              icon: Icons.photo_outlined,
-              onGallery: () async {
-                final media = await _pickFromGallery();
-                if (media != null && mounted) setState(() => _banner = media);
-              },
-              onFiles: () async {
-                final media = await _pickFromFiles();
-                if (media != null && mounted) setState(() => _banner = media);
-              },
-              onClearSelection: _banner == null
-                  ? null
-                  : () => setState(() => _banner = null),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: auth.isLoading ? null : () => _save(auth),
-                child: auth.isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Enregistrer'),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _descriptionCtrl,
+                maxLines: 4,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  prefixIcon: Icon(Icons.text_snippet_outlined),
+                  alignLabelWithHint: true,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              _MediaPickerTile(
+                title: 'Logo',
+                currentUrl: auth.currentMember?.company?.logoUrl,
+                selectedName: _logo?.name,
+                icon: Icons.image_outlined,
+                onGallery: () async {
+                  final media = await _pickFromGallery();
+                  if (media != null && mounted) setState(() => _logo = media);
+                },
+                onFiles: () async {
+                  final media = await _pickFromFiles();
+                  if (media != null && mounted) setState(() => _logo = media);
+                },
+                onClearSelection: _logo == null
+                    ? null
+                    : () => setState(() => _logo = null),
+              ),
+              const SizedBox(height: 12),
+              _MediaPickerTile(
+                title: 'Banniere / photo',
+                currentUrl: auth.currentMember?.company?.photoUrl,
+                selectedName: _banner?.name,
+                icon: Icons.photo_outlined,
+                onGallery: () async {
+                  final media = await _pickFromGallery();
+                  if (media != null && mounted) setState(() => _banner = media);
+                },
+                onFiles: () async {
+                  final media = await _pickFromFiles();
+                  if (media != null && mounted) setState(() => _banner = media);
+                },
+                onClearSelection: _banner == null
+                    ? null
+                    : () => setState(() => _banner = null),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: auth.isLoading ? null : () => _save(auth),
+                  child: auth.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Enregistrer'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -594,100 +604,104 @@ class _ChangePasswordTabState extends State<_ChangePasswordTab> {
     final auth = context.watch<AuthProvider>();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SectionHeader(
-              title: 'Sécurité du compte',
-              subtitle:
-                  'Utilisez au moins 8 caractères pour votre mot de passe.',
-            ),
-            TextFormField(
-              controller: _currentCtrl,
-              obscureText: _obscureCurrent,
-              decoration: InputDecoration(
-                labelText: 'Mot de passe actuel',
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureCurrent
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 40),
+      child: CecContentWidth(
+        maxWidth: 720,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionHeader(
+                title: 'Sécurité du compte',
+                subtitle:
+                    'Utilisez au moins 8 caractères pour votre mot de passe.',
+              ),
+              TextFormField(
+                controller: _currentCtrl,
+                obscureText: _obscureCurrent,
+                decoration: InputDecoration(
+                  labelText: 'Mot de passe actuel',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureCurrent
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscureCurrent = !_obscureCurrent),
                   ),
-                  onPressed: () =>
-                      setState(() => _obscureCurrent = !_obscureCurrent),
+                ),
+                validator: (v) => (v == null || v.isEmpty) ? 'Requis' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _newCtrl,
+                obscureText: _obscureNew,
+                decoration: InputDecoration(
+                  labelText: 'Nouveau mot de passe',
+                  prefixIcon: const Icon(Icons.lock_open_rounded),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureNew
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                  ),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Requis';
+                  if (v.length < 8) return '8 caractères minimum';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _confirmCtrl,
+                obscureText: _obscureConfirm,
+                decoration: InputDecoration(
+                  labelText: 'Confirmer le mot de passe',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirm
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscureConfirm = !_obscureConfirm),
+                  ),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Requis';
+                  if (v != _newCtrl.text) {
+                    return 'Les mots de passe ne correspondent pas';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: auth.isLoading ? null : () => _save(auth),
+                  child: auth.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Modifier le mot de passe'),
                 ),
               ),
-              validator: (v) => (v == null || v.isEmpty) ? 'Requis' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _newCtrl,
-              obscureText: _obscureNew,
-              decoration: InputDecoration(
-                labelText: 'Nouveau mot de passe',
-                prefixIcon: const Icon(Icons.lock_open_rounded),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureNew
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                  ),
-                  onPressed: () => setState(() => _obscureNew = !_obscureNew),
-                ),
-              ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Requis';
-                if (v.length < 8) return '8 caractères minimum';
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _confirmCtrl,
-              obscureText: _obscureConfirm,
-              decoration: InputDecoration(
-                labelText: 'Confirmer le mot de passe',
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirm
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                  ),
-                  onPressed: () =>
-                      setState(() => _obscureConfirm = !_obscureConfirm),
-                ),
-              ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Requis';
-                if (v != _newCtrl.text) {
-                  return 'Les mots de passe ne correspondent pas';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: auth.isLoading ? null : () => _save(auth),
-                child: auth.isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Modifier le mot de passe'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

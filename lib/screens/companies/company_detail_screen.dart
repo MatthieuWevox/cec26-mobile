@@ -33,139 +33,200 @@ class CompanyDetailScreen extends StatelessWidget {
     final hasPhoto = company.photoUrl?.isNotEmpty ?? false;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: hasPhoto ? 250 : 150,
-            pinned: true,
-            backgroundColor: AppTheme.primaryDark,
-            foregroundColor: Colors.white,
-            iconTheme: const IconThemeData(color: Colors.white),
-            surfaceTintColor: Colors.transparent,
-            systemOverlayStyle: SystemUiOverlayStyle.light,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (hasPhoto)
-                    CachedNetworkImage(
-                      imageUrl: company.photoUrl!,
-                      fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) =>
-                          const ColoredBox(color: AppTheme.primaryDark),
-                    )
-                  else
-                    const ColoredBox(color: AppTheme.primaryDark),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0x10000000), Color(0xE617143E)],
-                      ),
-                    ),
-                  ),
-                ],
+      body: CecBackground(
+        accentTop: false,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              expandedHeight: hasPhoto ? 250 : 180,
+              pinned: true,
+              stretch: true,
+              toolbarHeight: 64,
+              backgroundColor: AppTheme.primaryDark,
+              foregroundColor: Colors.white,
+              automaticallyImplyLeading: false,
+              leadingWidth: 68,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+                child: CecGlassIconButton(
+                  icon: Icons.arrow_back_rounded,
+                  tooltip: 'Retour',
+                  dark: true,
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(0, -28),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Hero(
-                          tag: 'company-logo-${company.id}',
-                          child: CompanyLogo(
-                            logoUrl: company.logoUrl,
-                            companyName: company.nom,
-                            size: 76,
+              surfaceTintColor: Colors.transparent,
+              systemOverlayStyle: SystemUiOverlayStyle.light,
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.parallax,
+                stretchModes: const [StretchMode.zoomBackground],
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (hasPhoto)
+                      CachedNetworkImage(
+                        imageUrl: company.photoUrl!,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
                           ),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 3),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  company.nom,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineMedium,
-                                ),
-                                if (company.sousTitre?.isNotEmpty ?? false) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    company.sousTitre!,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
-                                  ),
-                                ],
-                              ],
-                            ),
+                      )
+                    else
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient,
+                        ),
+                      ),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0x0D000000), Color(0xE8151234)],
+                          stops: [0.28, 1],
+                        ),
+                      ),
+                    ),
+                    if (!hasPhoto)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 28),
+                          child: Icon(
+                            Icons.apartment_rounded,
+                            size: 84,
+                            color: AppTheme.accentColor.withAlpha(96),
                           ),
+                        ),
+                      ),
+                    const Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: 24,
+                      child: ColoredBox(color: AppTheme.backgroundLight),
+                    ),
+                    Positioned(
+                      left: 22,
+                      bottom: 0,
+                      child: Hero(
+                        tag: 'company-logo-${company.id}',
+                        child: CompanyLogo(
+                          logoUrl: company.logoUrl,
+                          companyName: company.nom,
+                          size: 78,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: CecContentWidth(
+                maxWidth: 780,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 48),
+                  child: CecReveal(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      company.nom,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineMedium,
+                                    ),
+                                    if (company.sousTitre?.isNotEmpty ??
+                                        false) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        company.sousTitre!,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (company.activites?.isNotEmpty ?? false) ...[
+                              CecBadge(
+                                label: company.activites!,
+                                color: AppTheme.accentDark,
+                                icon: Icons.sell_outlined,
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                            if (company.description?.isNotEmpty ?? false) ...[
+                              Text(
+                                'À propos',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineSmall,
+                              ),
+                              const SizedBox(height: 10),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                child: Text(
+                                  company.description!,
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                              ),
+                            ],
+                            if (company.members?.isNotEmpty ?? false) ...[
+                              SectionHeader(
+                                title: 'Équipe',
+                                subtitle:
+                                    '${company.members!.length} membre${company.members!.length > 1 ? 's' : ''} dans le réseau.',
+                              ),
+                              for (final member in company.members!) ...[
+                                _MemberTile(member: member),
+                                const SizedBox(height: 10),
+                              ],
+                            ],
+                            const SizedBox(height: 22),
+                            Center(
+                              child: TextButton.icon(
+                                onPressed: () => _report(context),
+                                icon: const Icon(Icons.flag_outlined, size: 18),
+                                label: const Text('Signaler une information'),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  if (company.activites?.isNotEmpty ?? false) ...[
-                    CecBadge(
-                      label: company.activites!,
-                      color: AppTheme.accentDark,
-                      icon: Icons.sell_outlined,
-                    ),
-                    const SizedBox(height: 22),
-                  ],
-                  if (company.description?.isNotEmpty ?? false) ...[
-                    Text(
-                      'À propos',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 10),
-                    CecSurface(
-                      padding: const EdgeInsets.all(18),
-                      child: Text(
-                        company.description!,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ),
-                  ],
-                  if (company.members?.isNotEmpty ?? false) ...[
-                    SectionHeader(
-                      title: 'Équipe',
-                      subtitle:
-                          '${company.members!.length} membre${company.members!.length > 1 ? 's' : ''} dans le réseau.',
-                    ),
-                    for (final member in company.members!) ...[
-                      _MemberTile(member: member),
-                      const SizedBox(height: 9),
-                    ],
-                  ],
-                  const SizedBox(height: 24),
-                  Align(
-                    alignment: Alignment.center,
-                    child: TextButton.icon(
-                      onPressed: () => _report(context),
-                      icon: const Icon(Icons.flag_outlined, size: 18),
-                      label: const Text('Signaler une information'),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
