@@ -81,7 +81,9 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
               title: 'Le bon contact.',
               subtitle: 'Des talents d’ici. Des projets en commun.',
               icon: Icons.people_outline,
-            ),
+            )
+          else
+            const SafeArea(bottom: false, child: SizedBox(height: 12)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 22),
             child: Column(

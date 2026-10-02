@@ -89,6 +89,8 @@ void main() {
     'directory: search, clear and member segment preserve real results',
     (tester) async {
       await _smallPhone(tester);
+      tester.view.padding = const FakeViewPadding(top: 28);
+      addTearDown(tester.view.resetPadding);
       await http.runWithClient(
         () async {
           await tester.pumpWidget(_app(const CompaniesScreen()));
@@ -122,6 +124,10 @@ void main() {
           tester.view.viewInsets = const FakeViewPadding(bottom: 260);
           addTearDown(tester.view.resetViewInsets);
           await tester.pumpAndSettle();
+          expect(
+            tester.getTopLeft(find.byType(SegmentedButton<bool>)).dy,
+            greaterThanOrEqualTo(28),
+          );
           expect(tester.takeException(), isNull);
         },
         () => MockClient(

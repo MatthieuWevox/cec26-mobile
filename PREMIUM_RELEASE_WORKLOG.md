@@ -41,10 +41,11 @@ Le prototype sert de reference visuelle. Aucun contenu fictif ne doit entrer dan
 - Le Samsung etait deconnecte. Connexion demandee a l'utilisateur pour une verification physique de l'espace prive ; aucune donnee metier de test creee en production.
 - Accueil sans actualites : presentation du Club et acces direct a l'annuaire ; pas de faux articles ni de faux rendez-vous.
 - Echanges : listes compactes, ecrans de details et coordonnees actionnables, signalement conserve.
-- Bundle final : build/app/outputs/bundle/release/app-release.aab, 2.1.0+22, 57.9 MB.
-- SHA-256 final : 77FB2183FDBC73294C96A8E021E2F11E438620B48AE9F40D1C6F54FE5A8A7469.
+- Premier bundle importe en brouillon : 2.1.0+22, SHA-256 77FB2183FDBC73294C96A8E021E2F11E438620B48AE9F40D1C6F54FE5A8A7469. Non soumis.
 - Signature JAR verifiee ; certificat Android auto-signe attendu. Manifeste : cloud.wevox.cec2026.cec2026, minSdk 24, targetSdk 36, permission POST_NOTIFICATIONS conservee.
 - Avertissements non bloquants : migration future Kotlin Gradle Plugin/Flutter et API Android de Firebase depreciee. Pas de mise a jour native risquee dans cette refonte.
 - Aucun diff dans ios, android, services Firebase, API ou authentification. Compilation native iOS a realiser sur Mac.
 - Google Play a ensuite affiche 21 (2.0.1) disponible ; creation d'une nouvelle release possible sans annuler d'examen.
 - Dernier controle Samsung : correction du contraste des filtres actifs/inactifs, couverte par un test. Licence Manrope embarquee et accessible dans la page des licences.
+- Commit de la refonte f3ea5ea pousse sur master.
+- Test complementaire clavier Samsung : ajout d'une SafeArea lorsque l'en-tete de l'annuaire se replie, afin de ne pas recouvrir la barre d'etat. Test avec marge haute de 28 px ajoute. Le code 22 etant deja importe, le bundle de soumission est incremente a 23 (2.1.0).
