@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static const Color primaryColor = Color(0xFF272262);
   static const Color primaryLight = Color(0xFF46408E);
   static const Color primaryDark = Color(0xFF151234);
   static const Color accentColor = Color(0xFF5CC7CF);
-  static const Color accentDark = Color(0xFF168D99);
+  static const Color accentDark = Color(0xFF126B74);
   static const Color accentSoft = Color(0xFFE5F7F8);
 
   static const Color backgroundLight = Color(0xFFF5F7FA);
@@ -16,15 +15,15 @@ class AppTheme {
   static const Color surfaceMuted = Color(0xFFF0F2F6);
   static const Color surfaceStrong = Color(0xFFE2E6ED);
   static const Color textPrimary = Color(0xFF171827);
-  static const Color textSecondary = Color(0xFF626A7D);
-  static const Color dividerColor = Color(0xFFDDE2EA);
+  static const Color textSecondary = Color(0xFF69717C);
+  static const Color dividerColor = Color(0xFFE5E8ED);
   static const Color errorColor = Color(0xFFC83246);
   static const Color successColor = Color(0xFF12805B);
   static const Color warningColor = Color(0xFFC96B12);
 
   static const double radiusSmall = 6;
   static const double radius = 8;
-  static const double navigationRadius = 16;
+  static const double navigationRadius = 20;
 
   static const Duration motionFast = Duration(milliseconds: 160);
   static const Duration motion = Duration(milliseconds: 320);
@@ -71,8 +70,8 @@ class AppTheme {
 
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: primaryDark.withAlpha(24),
-      blurRadius: 20,
+      color: primaryDark.withAlpha(12),
+      blurRadius: 16,
       offset: const Offset(0, 8),
       spreadRadius: -8,
     ),
@@ -85,7 +84,7 @@ class AppTheme {
 
   static List<BoxShadow> get navShadow => [
     BoxShadow(
-      color: primaryDark.withAlpha(48),
+      color: primaryDark.withAlpha(28),
       blurRadius: 34,
       offset: const Offset(0, 14),
       spreadRadius: -8,
@@ -102,7 +101,7 @@ class AppTheme {
   ];
 
   static ThemeData get lightTheme {
-    final base = GoogleFonts.poppinsTextTheme();
+    final base = ThemeData.light().textTheme.apply(fontFamily: 'Manrope');
     const colorScheme = ColorScheme.light(
       primary: primaryColor,
       onPrimary: Colors.white,
@@ -122,8 +121,9 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: backgroundLight,
-      canvasColor: backgroundLight,
+      fontFamily: 'Manrope',
+      scaffoldBackgroundColor: surfaceColor,
+      canvasColor: surfaceColor,
       splashFactory: InkRipple.splashFactory,
       visualDensity: VisualDensity.standard,
       textTheme: base.copyWith(
@@ -142,8 +142,8 @@ class AppTheme {
           letterSpacing: 0,
         ),
         headlineLarge: base.headlineLarge?.copyWith(
-          fontSize: 24,
-          height: 1.22,
+          fontSize: 28,
+          height: 1.25,
           fontWeight: FontWeight.w700,
           color: textPrimary,
           letterSpacing: 0,
@@ -220,12 +220,13 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         toolbarHeight: 64,
         titleSpacing: 8,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: TextStyle(
+          fontFamily: 'Manrope',
           color: textPrimary,
-          fontSize: 18,
+          fontSize: 14,
           fontWeight: FontWeight.w700,
           letterSpacing: 0,
         ),
@@ -246,7 +247,8 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         indicatorColor: accentSoft,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          return GoogleFonts.poppins(
+          return TextStyle(
+            fontFamily: 'Manrope',
             fontSize: 11,
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w600
@@ -289,7 +291,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radius),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: TextStyle(
+            fontFamily: 'Manrope',
             fontSize: 14,
             fontWeight: FontWeight.w600,
             letterSpacing: 0,
@@ -305,7 +308,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radius),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: TextStyle(
+            fontFamily: 'Manrope',
             fontSize: 14,
             fontWeight: FontWeight.w600,
             letterSpacing: 0,
@@ -322,7 +326,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radius),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: TextStyle(
+            fontFamily: 'Manrope',
             fontSize: 14,
             fontWeight: FontWeight.w600,
             letterSpacing: 0,
@@ -332,7 +337,8 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
-          textStyle: GoogleFonts.poppins(
+          textStyle: TextStyle(
+            fontFamily: 'Manrope',
             fontWeight: FontWeight.w600,
             letterSpacing: 0,
           ),
@@ -352,7 +358,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withAlpha(220),
+        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
           borderSide: BorderSide(color: primaryColor.withAlpha(26)),
@@ -387,11 +393,39 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? Colors.white
+                : backgroundLight,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? primaryColor
+                : textSecondary,
+          ),
+          side: const WidgetStatePropertyAll(BorderSide(color: dividerColor)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
+          ),
+          textStyle: const WidgetStatePropertyAll(
+            TextStyle(
+              fontFamily: 'Manrope',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+      ),
       chipTheme: ChipThemeData(
         backgroundColor: accentSoft,
         selectedColor: primaryColor,
         side: BorderSide(color: primaryColor.withAlpha(18)),
-        labelStyle: GoogleFonts.poppins(
+        labelStyle: TextStyle(
+          fontFamily: 'Manrope',
           color: primaryColor,
           fontSize: 12,
           fontWeight: FontWeight.w600,
@@ -439,7 +473,8 @@ class AppTheme {
         backgroundColor: primaryDark.withAlpha(244),
         elevation: 0,
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-        contentTextStyle: GoogleFonts.poppins(
+        contentTextStyle: TextStyle(
+          fontFamily: 'Manrope',
           color: Colors.white,
           fontSize: 13,
           letterSpacing: 0,
@@ -460,12 +495,14 @@ class AppTheme {
         unselectedLabelColor: textSecondary,
         dividerColor: Colors.transparent,
         labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-        labelStyle: GoogleFonts.poppins(
+        labelStyle: TextStyle(
+          fontFamily: 'Manrope',
           fontWeight: FontWeight.w600,
           fontSize: 12,
           letterSpacing: 0,
         ),
-        unselectedLabelStyle: GoogleFonts.poppins(
+        unselectedLabelStyle: TextStyle(
+          fontFamily: 'Manrope',
           fontWeight: FontWeight.w500,
           fontSize: 12,
           letterSpacing: 0,
@@ -494,7 +531,8 @@ class AppTheme {
           color: primaryDark.withAlpha(242),
           borderRadius: BorderRadius.circular(radiusSmall),
         ),
-        textStyle: GoogleFonts.poppins(
+        textStyle: TextStyle(
+          fontFamily: 'Manrope',
           color: Colors.white,
           fontSize: 11,
           letterSpacing: 0,

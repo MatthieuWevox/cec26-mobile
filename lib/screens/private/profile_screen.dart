@@ -36,60 +36,28 @@ Future<_PickedMedia?> _pickFromFiles() async {
 
 enum ProfileTab { profile, company, password }
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatelessWidget {
   final ProfileTab initialTab;
   const ProfileScreen({super.key, this.initialTab = ProfileTab.profile});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(
-      length: 3,
-      vsync: this,
-      initialIndex: widget.initialTab.index,
-    );
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CecGlassAppBar(
-        title: const Text('Mon profil'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.person_outline_rounded), text: 'Profil'),
-            Tab(icon: Icon(Icons.business_outlined), text: 'Entreprise'),
-            Tab(icon: Icon(Icons.lock_outline_rounded), text: 'Mot de passe'),
-          ],
-        ),
-      ),
-      body: CecBackground(
-        child: TabBarView(
-          controller: _tabController,
-          children: const [
-            _EditProfileTab(),
-            _EditCompanyTab(),
-            _ChangePasswordTab(),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+    appBar: CecGlassAppBar(
+      title: Text(switch (initialTab) {
+        ProfileTab.profile => 'Mon profil',
+        ProfileTab.company => 'Mon entreprise',
+        ProfileTab.password => 'Sécurité',
+      }),
+    ),
+    body: SafeArea(
+      top: false,
+      child: switch (initialTab) {
+        ProfileTab.profile => const _EditProfileTab(),
+        ProfileTab.company => const _EditCompanyTab(),
+        ProfileTab.password => const _ChangePasswordTab(),
+      },
+    ),
+  );
 }
 
 // ─── Edit Profile Tab ─────────────────────────────────────────────────────────
@@ -155,7 +123,7 @@ class _EditProfileTabState extends State<_EditProfileTab> {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 40),
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 40),
       child: CecContentWidth(
         maxWidth: 720,
         child: Form(
@@ -441,7 +409,7 @@ class _EditCompanyTabState extends State<_EditCompanyTab> {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 40),
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 40),
       child: CecContentWidth(
         maxWidth: 720,
         child: Form(
@@ -605,7 +573,7 @@ class _ChangePasswordTabState extends State<_ChangePasswordTab> {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 40),
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 40),
       child: CecContentWidth(
         maxWidth: 720,
         child: Form(

@@ -14,34 +14,7 @@ class CecBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(gradient: AppTheme.canvasGradient),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (accentTop)
-            Align(
-              alignment: Alignment.topCenter,
-              child: IgnorePointer(
-                child: Container(
-                  height: 260,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        AppTheme.accentColor.withAlpha(24),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          child,
-        ],
-      ),
-    );
+    return ColoredBox(color: AppTheme.surfaceColor, child: child);
   }
 }
 
@@ -179,7 +152,8 @@ class CecGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: actions,
       bottom: bottom,
       leading: leading,
-      backgroundColor: Colors.white.withAlpha(196),
+      centerTitle: true,
+      backgroundColor: Colors.white.withAlpha(238),
       flexibleSpace: ClipRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
@@ -292,7 +266,7 @@ class CompanyLogo extends StatelessWidget {
       height: size,
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(236),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: Colors.white),
         boxShadow: AppTheme.cardShadow,
@@ -354,8 +328,8 @@ class CecPageHeader extends StatelessWidget {
                     children: [
                       Image.asset(
                         'assets/logo_purple_nobg.png',
-                        width: 55,
-                        height: 35,
+                        width: 64,
+                        height: 38,
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => const Text(
                           'CEC',
@@ -378,8 +352,8 @@ class CecPageHeader extends StatelessWidget {
                           eyebrow,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
+                                fontSize: 11,
                                 color: AppTheme.textSecondary,
-                                fontWeight: FontWeight.w500,
                               ),
                         ),
                       ),
@@ -393,13 +367,13 @@ class CecPageHeader extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontSize: 30,
-                      height: 1.16,
+                      fontSize: 28,
+                      height: 1.25,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
                   if (bottom != null) ...[const SizedBox(height: 18), bottom!],
                 ],
               ),
@@ -493,27 +467,12 @@ class _CecSurfaceState extends State<CecSurface> {
 
     Widget body = DecoratedBox(
       decoration: BoxDecoration(
-        color: widget.glass
-            ? widget.color.withAlpha(188)
-            : widget.color.withAlpha(244),
+        color: widget.color,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(
-          color:
-              widget.borderColor ??
-              (widget.glass
-                  ? Colors.white.withAlpha(190)
-                  : AppTheme.primaryColor.withAlpha(10)),
-        ),
+        border: Border.all(color: widget.borderColor ?? AppTheme.dividerColor),
       ),
       child: material,
     );
-
-    if (widget.glass) {
-      body = BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: body,
-      );
-    }
 
     return AnimatedScale(
       scale: widget.onTap != null && _pressed ? 0.985 : 1,

@@ -55,53 +55,77 @@ class _ThanksScreenState extends State<ThanksScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CecGlassAppBar(
-        title: const Text('Remerciements'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.inbox_rounded), text: 'Reçus'),
-            Tab(icon: Icon(Icons.send_rounded), text: 'Envoyés'),
-          ],
+  Widget build(BuildContext context) => Scaffold(
+    appBar: const CecGlassAppBar(title: Text('Remerciements')),
+    body: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(22, 16, 22, 24),
+          child: Text(
+            'Un merci qui compte.',
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          child: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'Reçus'),
+              Tab(text: 'Envoyés'),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _ThanksList(
+                future: _received,
+                isReceived: true,
+                onHidden: () {
+                  if (mounted) setState(_load);
+                },
+              ),
+              _ThanksList(
+                future: _sent,
+                isReceived: false,
+                onHidden: () {
+                  if (mounted) setState(_load);
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+    bottomNavigationBar: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 16),
+        child: ElevatedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                appBar: const CecGlassAppBar(
+                  title: Text('Nouveau remerciement'),
+                ),
+                body: CreateThanksSheet(
+                  onCreated: () {
+                    if (mounted) setState(_load);
+                  },
+                ),
+              ),
+            ),
+          ),
+          icon: const Icon(Icons.add_rounded),
+          label: Text('Remercier un membre'),
         ),
       ),
-      body: CecBackground(
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _ThanksList(
-              future: _received,
-              isReceived: true,
-              onHidden: () => setState(_load),
-            ),
-            _ThanksList(
-              future: _sent,
-              isReceived: false,
-              onHidden: () => setState(_load),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateDialog(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nouveau remerciement'),
-      ),
-    );
-  }
-
-  Future<void> _showCreateDialog(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: false,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) =>
-          CreateThanksSheet(onCreated: () => setState(() => _load())),
-    );
-  }
+    ),
+  );
 }
 
 class _ThanksList extends StatelessWidget {
@@ -124,7 +148,10 @@ class _ThanksList extends StatelessWidget {
           return const CecLoadingWidget();
         }
         if (snapshot.hasError) {
-          return CecErrorWidget(message: snapshot.error.toString());
+          return CecErrorWidget(
+            message: snapshot.error.toString(),
+            onRetry: onHidden,
+          );
         }
         final items = snapshot.data ?? [];
         if (items.isEmpty) {
@@ -139,10 +166,10 @@ class _ThanksList extends StatelessWidget {
           builder: (context, constraints) {
             final horizontal = constraints.maxWidth > 760
                 ? (constraints.maxWidth - 720) / 2
-                : 16.0;
+                : 22.0;
             return ListView.separated(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(horizontal, 18, horizontal, 108),
+              padding: EdgeInsets.fromLTRB(horizontal, 20, horizontal, 28),
               itemCount: items.length,
               itemBuilder: (context, index) => CecReveal(
                 delay: Duration(milliseconds: index.clamp(0, 5) * 45),
@@ -180,102 +207,158 @@ class _ThanksCard extends StatelessWidget {
       contentName: 'Remerciement de ${thanks.remerciant?.fullName ?? 'membre'}',
       authToken: context.read<AuthProvider>().token,
     );
-    if (hidden) onHidden();
+    if (hidden) {
+      onHidden();
+      if (context.mounted) Navigator.pop(context);
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final date = DateTime.tryParse(thanks.dateAffaire);
-    final dateStr = date != null
-        ? DateFormat('d MMM yyyy', 'fr_FR').format(date)
-        : thanks.dateAffaire;
-    final amount = double.tryParse(thanks.montantHt) ?? 0.0;
-    final formattedAmount = NumberFormat.currency(
-      locale: 'fr_FR',
-      symbol: '€',
-      decimalDigits: 2,
-    ).format(amount);
+  String get _date {
+    final value = thanks.dateAffaire;
+    final date = DateTime.tryParse(value);
+    return date == null
+        ? value
+        : DateFormat('d MMM yyyy', 'fr_FR').format(date);
+  }
 
-    final otherMember = isReceived ? thanks.remerciant : thanks.remercie;
+  Member? get _otherMember => isReceived ? thanks.remerciant : thanks.remercie;
+  String get _title => NumberFormat.currency(
+    locale: 'fr_FR',
+    symbol: '€',
+    decimalDigits: 2,
+  ).format(double.tryParse(thanks.montantHt) ?? 0);
 
-    return CecSurface(
-      glass: true,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppTheme.accentSoft,
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
-                ),
-                child: const Icon(
-                  Icons.handshake_outlined,
-                  color: AppTheme.accentDark,
-                  size: 21,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      formattedAmount,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(color: AppTheme.primaryColor),
-                    ),
-                    Text(
-                      'Affaire du $dateStr',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
+  Future<void> _open(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (detailContext) => Scaffold(
+          appBar: CecGlassAppBar(
+            title: const Text('Remerciement'),
+            actions: [
               if (isReceived)
-                Tooltip(
-                  message: 'Signaler ce remerciement',
-                  child: IconButton(
-                    onPressed: () => _report(context),
-                    icon: const Icon(Icons.flag_outlined),
-                    iconSize: 18,
-                    visualDensity: VisualDensity.compact,
-                  ),
+                IconButton(
+                  tooltip: 'Signaler',
+                  onPressed: () async {
+                    await _report(detailContext);
+                  },
+                  icon: const Icon(Icons.flag_outlined),
                 ),
             ],
           ),
-          if (thanks.description?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 12),
-            const Divider(),
-            const SizedBox(height: 11),
-            Text(
-              thanks.description!,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-          if (otherMember != null) ...[
-            const SizedBox(height: 13),
-            CecBadge(
-              label: '${isReceived ? 'DE' : 'À'} ${otherMember.fullName}',
-              color: AppTheme.accentDark,
-              icon: isReceived
-                  ? Icons.person_outline_rounded
-                  : Icons.send_rounded,
-            ),
-          ],
-        ],
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 40),
+            children: [
+              CecBadge(
+                label: isReceived ? 'REÇU' : 'ENVOYÉ',
+                color: AppTheme.accentDark,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                _title,
+                style: Theme.of(detailContext).textTheme.headlineLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Montant HT · Affaire du $_date',
+                style: Theme.of(detailContext).textTheme.bodySmall,
+              ),
+              if (_otherMember != null) ...[
+                const SizedBox(height: 28),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: MemberAvatar(
+                    name: _otherMember!.fullName,
+                    imageUrl: _otherMember!.photoUrl,
+                    radius: 24,
+                  ),
+                  title: Text(_otherMember!.fullName),
+                  subtitle: Text(
+                    isReceived
+                        ? 'Vous remercie'
+                        : 'Destinataire de votre remerciement',
+                  ),
+                ),
+              ],
+              const SectionHeader(title: 'Le message'),
+              Text(
+                thanks.description?.isNotEmpty == true
+                    ? thanks.description!
+                    : 'Aucun message complémentaire.',
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) => CecSurface(
+    onTap: () => _open(context),
+    padding: const EdgeInsets.all(18),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            MemberAvatar(
+              name: _otherMember?.fullName ?? 'Membre',
+              imageUrl: _otherMember?.photoUrl,
+              radius: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _otherMember?.fullName ?? 'Membre',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    isReceived ? 'Vous remercie' : 'Votre remerciement',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.north_east_rounded,
+              size: 17,
+              color: AppTheme.textSecondary,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text(_title, style: Theme.of(context).textTheme.headlineMedium),
+        Text('Montant HT', style: Theme.of(context).textTheme.bodySmall),
+        if (thanks.description?.isNotEmpty == true) ...[
+          const SizedBox(height: 8),
+          Text(
+            thanks.description!,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+        const SizedBox(height: 18),
+        const Divider(),
+        const SizedBox(height: 12),
+        Text(_date, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    ),
+  );
 }
 
 class CreateThanksSheet extends StatefulWidget {
   final VoidCallback onCreated;
-  const CreateThanksSheet({super.key, required this.onCreated});
+  final Member? initialRecipient;
+  const CreateThanksSheet({
+    super.key,
+    required this.onCreated,
+    this.initialRecipient,
+  });
 
   @override
   State<CreateThanksSheet> createState() => _CreateThanksSheetState();
@@ -311,8 +394,12 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
       final myId = context.read<AuthProvider>().currentMember?.id;
       setState(() {
         _members = list.where((m) => m.id != myId).toList();
+        _selectedMember = _members!
+            .where((m) => m.id == widget.initialRecipient?.id)
+            .firstOrNull;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() => _error = 'Impossible de charger la liste des membres.');
     }
   }
@@ -337,7 +424,7 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_loading || !_formKey.currentState!.validate()) return;
     if (_selectedMember == null) {
       setState(() => _error = 'Sélectionnez un destinataire.');
       return;
@@ -359,9 +446,10 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
         description: _descCtrl.text.trim(),
       );
       if (mounted) {
-        Navigator.pop(context);
+        final messenger = ScaffoldMessenger.of(context);
         widget.onCreated();
-        ScaffoldMessenger.of(context).showSnackBar(
+        Navigator.pop(context);
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('Remerciement créé.'),
             backgroundColor: AppTheme.successColor,
@@ -369,11 +457,13 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
         );
       }
     } on ApiException catch (e) {
+      if (!mounted) return;
       setState(() {
         _loading = false;
         _error = e.message;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _loading = false;
         _error = 'Erreur lors de la création.';
@@ -385,154 +475,137 @@ class _CreateThanksSheetState extends State<CreateThanksSheet> {
   Widget build(BuildContext context) {
     final dateStr = _selectedDate != null
         ? DateFormat('d MMMM yyyy', 'fr_FR').format(_selectedDate!)
-        : 'Choisir une date';
-
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: CecGlassPanel(
-        color: Colors.white.withAlpha(240),
-        blur: 24,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppTheme.dividerColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Nouveau remerciement',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 20),
-
-                // Recipient
-                const Text(
-                  'Destinataire *',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                if (_members == null)
-                  const Center(child: CircularProgressIndicator())
-                else
-                  DropdownButtonFormField<Member>(
-                    initialValue: _selectedMember,
-                    decoration: const InputDecoration(
-                      hintText: 'Sélectionner un membre',
-                      prefixIcon: Icon(Icons.person_rounded),
-                    ),
-                    items: _members!
-                        .map(
-                          (m) => DropdownMenuItem(
-                            value: m,
-                            child: Text(
-                              '${m.fullName}${m.company != null ? ' – ${m.company!.nom}' : ''}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedMember = v),
-                    validator: (v) =>
-                        v == null ? 'Sélectionnez un destinataire' : null,
-                  ),
-
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _montantCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Montant HT (€) *',
-                    prefixIcon: Icon(Icons.euro_rounded),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Requis';
-                    if (double.tryParse(v.replaceAll(',', '.')) == null) {
-                      return 'Montant invalide';
-                    }
-                    return null;
-                  },
-                  onChanged: (v) {
-                    final normalized = v.replaceAll(',', '.');
-                    if (normalized != v) {
-                      _montantCtrl
-                        ..text = normalized
-                        ..selection = TextSelection.collapsed(
-                          offset: normalized.length,
-                        );
-                    }
-                  },
-                ),
-
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: _pickDate,
-                  icon: const Icon(Icons.calendar_today_rounded),
-                  label: Text(dateStr),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 52),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _descCtrl,
-                  maxLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    prefixIcon: Icon(Icons.text_snippet_outlined),
-                    alignLabelWithHint: true,
-                  ),
-                ),
-
-                if (_error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _error!,
-                    style: const TextStyle(color: AppTheme.errorColor),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _loading ? null : _submit,
-                    child: _loading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Envoyer le remerciement'),
-                  ),
-                ),
-              ],
+        : 'Date de l’affaire *';
+    return SafeArea(
+      top: false,
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
+          children: [
+            Text(
+              'Valorisons nos réussites.',
+              style: Theme.of(context).textTheme.headlineLarge,
             ),
-          ),
+            const SizedBox(height: 28),
+            const Text(
+              'Destinataire *',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            if (_members == null && _error == null)
+              const Center(child: CircularProgressIndicator())
+            else if (_members == null)
+              TextButton.icon(
+                onPressed: () {
+                  setState(() => _error = null);
+                  _loadMembers();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Réessayer'),
+              )
+            else
+              DropdownButtonFormField<Member>(
+                isExpanded: true,
+                initialValue: _selectedMember,
+                decoration: const InputDecoration(
+                  hintText: 'Sélectionner un membre',
+                  prefixIcon: Icon(Icons.person_rounded),
+                ),
+                items: _members!
+                    .map(
+                      (m) => DropdownMenuItem(
+                        value: m,
+                        child: Text(
+                          '${m.fullName}${m.company != null ? ' – ${m.company!.nom}' : ''}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedMember = v),
+                validator: (v) =>
+                    v == null ? 'Sélectionnez un destinataire' : null,
+              ),
+
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _montantCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Montant HT (€) *',
+                prefixIcon: Icon(Icons.euro_rounded),
+              ),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Requis';
+                final amount = double.tryParse(v.replaceAll(',', '.'));
+                if (amount == null || !amount.isFinite || amount < 0) {
+                  return 'Montant invalide';
+                }
+                return null;
+              },
+              onChanged: (v) {
+                final normalized = v.replaceAll(',', '.');
+                if (normalized != v) {
+                  _montantCtrl
+                    ..text = normalized
+                    ..selection = TextSelection.collapsed(
+                      offset: normalized.length,
+                    );
+                }
+              },
+            ),
+
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _pickDate,
+              icon: const Icon(Icons.calendar_today_rounded),
+              label: Text(dateStr),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 52),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _descCtrl,
+              maxLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                prefixIcon: Icon(Icons.text_snippet_outlined),
+                alignLabelWithHint: true,
+              ),
+            ),
+
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!, style: const TextStyle(color: AppTheme.errorColor)),
+            ],
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _loading || _members == null ? null : _submit,
+                child: _loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Envoyer le remerciement'),
+              ),
+            ),
+          ],
         ),
       ),
     );

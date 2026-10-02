@@ -23,11 +23,14 @@ class _MainScreenState extends State<MainScreen>
   int _currentIndex = 0;
   late final AnimationController _contentController;
 
-  static const _screens = <Widget>[
-    NewsScreen(),
-    MeetingsScreen(),
-    CompaniesScreen(),
-    PrivateHomeScreen(),
+  List<Widget> get _screens => [
+    NewsScreen(
+      onOpenAgenda: () => _selectDestination(1),
+      onOpenDirectory: () => _selectDestination(2),
+    ),
+    const MeetingsScreen(),
+    const CompaniesScreen(),
+    const PrivateHomeScreen(),
   ];
 
   @override
@@ -118,12 +121,12 @@ class _FloatingGlassNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final destinations = <_DestinationData>[
       const _DestinationData(
-        label: 'Actualités',
-        icon: Icons.newspaper_outlined,
-        selectedIcon: Icons.newspaper_rounded,
+        label: 'Le Club',
+        icon: Icons.home_outlined,
+        selectedIcon: Icons.home_rounded,
       ),
       const _DestinationData(
-        label: 'Réunions',
+        label: 'Agenda',
         icon: Icons.calendar_month_outlined,
         selectedIcon: Icons.calendar_month_rounded,
       ),
@@ -148,7 +151,7 @@ class _FloatingGlassNavigation extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 760),
         child: CecGlassPanel(
           key: const Key('main-navigation-panel'),
-          margin: const EdgeInsets.symmetric(horizontal: 20),
+          margin: const EdgeInsets.symmetric(horizontal: 14),
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           color: Colors.white.withAlpha(212),
           borderRadius: BorderRadius.circular(AppTheme.navigationRadius),
@@ -211,7 +214,7 @@ class _NavigationItem extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
               decoration: BoxDecoration(
                 color: selected ? AppTheme.primaryColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: selected ? AppTheme.primaryColor : Colors.transparent,
                 ),
@@ -237,7 +240,7 @@ class _NavigationItem extends StatelessWidget {
                     softWrap: false,
                     style: TextStyle(
                       color: selected ? Colors.white : AppTheme.textSecondary,
-                      fontSize: 9.5,
+                      fontSize: 10,
                       height: 1.15,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                       letterSpacing: 0,

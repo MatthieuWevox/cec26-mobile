@@ -2,6 +2,8 @@ import 'package:cec2026/providers/auth_provider.dart';
 import 'package:cec2026/models/member.dart';
 import 'package:cec2026/screens/private/private_home_screen.dart';
 import 'package:cec2026/screens/main_screen.dart';
+import 'package:cec2026/screens/news/news_screen.dart';
+import 'package:cec2026/screens/private/login_screen.dart';
 import 'package:cec2026/theme/app_theme.dart';
 import 'package:cec2026/widgets/common_widgets.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +36,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       expect(tester.takeException(), isNull);
       await tester.scrollUntilVisible(find.text('Mon profil'), 220);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Mon profil'));
       await tester.pumpAndSettle();
       expect(find.text('Enregistrer'), findsWidgets);
@@ -125,7 +128,7 @@ void main() {
     expect(opacity.opacity, 1);
   });
 
-  testWidgets('la navigation téléphone laisse la connexion visible', (
+  testWidgets('le démarrage est public et la connexion reste dans son onglet', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -143,6 +146,10 @@ void main() {
       ),
     );
 
+    expect(find.byType(NewsScreen), findsOneWidget);
+    expect(find.byType(LoginScreen), findsNothing);
+    expect(find.text('Découvrir le Club sans compte'), findsNothing);
+
     await tester.tap(find.text('Connexion'));
     await tester.pump(AppTheme.motion);
 
@@ -151,7 +158,13 @@ void main() {
     );
     expect(navigationSize.width, lessThanOrEqualTo(390));
     expect(navigationSize.height, lessThan(100));
-    expect(find.text('Votre réseau,\nà portée de main.'), findsOneWidget);
+    expect(find.text('Heureux de\nvous retrouver.'), findsOneWidget);
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.text('Découvrir le Club sans compte'), findsNothing);
+    await tester.tap(find.text('Le Club'));
+    await tester.pump(AppTheme.motion);
+    expect(find.byType(NewsScreen), findsOneWidget);
+    expect(find.byType(LoginScreen), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -212,8 +225,15 @@ void main() {
     await tester.pump();
     await tester.pump(AppTheme.motion);
     expect(find.byKey(const Key('main-navigation-panel')), findsNothing);
-    await tester.ensureVisible(
+    await tester.scrollUntilVisible(
       find.widgetWithText(ElevatedButton, 'Se connecter'),
+      180,
+      scrollable: find
+          .descendant(
+            of: find.byType(LoginScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
     await tester.pump();
     expect(tester.takeException(), isNull);

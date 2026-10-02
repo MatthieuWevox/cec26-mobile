@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/member.dart';
 import '../../models/recommendation.dart';
@@ -59,53 +60,77 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CecGlassAppBar(
-        title: const Text('Recommandations'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.inbox_rounded), text: 'Reçues'),
-            Tab(icon: Icon(Icons.send_rounded), text: 'Envoyées'),
-          ],
+  Widget build(BuildContext context) => Scaffold(
+    appBar: const CecGlassAppBar(title: Text('Recommandations')),
+    body: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(22, 16, 22, 24),
+          child: Text(
+            'Les bonnes connexions.',
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          child: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'Reçues'),
+              Tab(text: 'Envoyées'),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _RecommendationList(
+                future: _received,
+                isReceived: true,
+                onHidden: () {
+                  if (mounted) setState(_load);
+                },
+              ),
+              _RecommendationList(
+                future: _sent,
+                isReceived: false,
+                onHidden: () {
+                  if (mounted) setState(_load);
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+    bottomNavigationBar: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 16),
+        child: ElevatedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                appBar: const CecGlassAppBar(
+                  title: Text('Nouvelle recommandation'),
+                ),
+                body: CreateRecommendationSheet(
+                  onCreated: () {
+                    if (mounted) setState(_load);
+                  },
+                ),
+              ),
+            ),
+          ),
+          icon: const Icon(Icons.add_rounded),
+          label: Text('Recommander un contact'),
         ),
       ),
-      body: CecBackground(
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _RecommendationList(
-              future: _received,
-              isReceived: true,
-              onHidden: () => setState(_load),
-            ),
-            _RecommendationList(
-              future: _sent,
-              isReceived: false,
-              onHidden: () => setState(_load),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateDialog(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nouvelle recommandation'),
-      ),
-    );
-  }
-
-  Future<void> _showCreateDialog(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: false,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) =>
-          CreateRecommendationSheet(onCreated: () => setState(() => _load())),
-    );
-  }
+    ),
+  );
 }
 
 class _RecommendationList extends StatelessWidget {
@@ -128,7 +153,10 @@ class _RecommendationList extends StatelessWidget {
           return const CecLoadingWidget();
         }
         if (snapshot.hasError) {
-          return CecErrorWidget(message: snapshot.error.toString());
+          return CecErrorWidget(
+            message: snapshot.error.toString(),
+            onRetry: onHidden,
+          );
         }
         final items = snapshot.data ?? [];
         if (items.isEmpty) {
@@ -143,10 +171,10 @@ class _RecommendationList extends StatelessWidget {
           builder: (context, constraints) {
             final horizontal = constraints.maxWidth > 760
                 ? (constraints.maxWidth - 720) / 2
-                : 16.0;
+                : 22.0;
             return ListView.separated(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(horizontal, 18, horizontal, 108),
+              padding: EdgeInsets.fromLTRB(horizontal, 20, horizontal, 28),
               itemCount: items.length,
               itemBuilder: (context, index) => CecReveal(
                 delay: Duration(milliseconds: index.clamp(0, 5) * 45),
@@ -185,109 +213,196 @@ class _RecommendationCard extends StatelessWidget {
           'Recommandation de ${rec.recommandateur?.fullName ?? 'membre'}',
       authToken: context.read<AuthProvider>().token,
     );
-    if (hidden) onHidden();
+    if (hidden) {
+      onHidden();
+      if (context.mounted) Navigator.pop(context);
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final date = DateTime.tryParse(rec.createdAt);
-    final dateStr = date != null
-        ? DateFormat('d MMM yyyy', 'fr_FR').format(date)
-        : '';
+  String get _date {
+    final value = rec.createdAt;
+    final date = DateTime.tryParse(value);
+    return date == null
+        ? value
+        : DateFormat('d MMM yyyy', 'fr_FR').format(date);
+  }
 
-    final otherMember = isReceived ? rec.recommandateur : rec.recommande;
+  Member? get _otherMember => isReceived ? rec.recommandateur : rec.recommande;
+  String get _title => rec.contactFullName;
 
-    return CecSurface(
-      glass: true,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppTheme.accentSoft,
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
+  Future<void> _open(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (detailContext) => Scaffold(
+          appBar: CecGlassAppBar(
+            title: const Text('Recommandation'),
+            actions: [
+              if (isReceived)
+                IconButton(
+                  tooltip: 'Signaler',
+                  onPressed: () async {
+                    await _report(detailContext);
+                  },
+                  icon: const Icon(Icons.flag_outlined),
                 ),
-                child: const Icon(
-                  Icons.person_pin_outlined,
-                  color: AppTheme.primaryColor,
-                  size: 21,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      rec.contactFullName,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    if (rec.email?.isNotEmpty ?? false)
-                      Text(
-                        rec.email!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(dateStr, style: Theme.of(context).textTheme.bodySmall),
-                  if (isReceived)
-                    Tooltip(
-                      message: 'Signaler cette recommandation',
-                      child: IconButton(
-                        onPressed: () => _report(context),
-                        icon: const Icon(Icons.flag_outlined),
-                        iconSize: 18,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                ],
-              ),
             ],
           ),
-          if (rec.telephone?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 11),
-            CecMeta(icon: Icons.phone_outlined, text: rec.telephone!),
-          ],
-          if (rec.description?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 12),
-            const Divider(),
-            const SizedBox(height: 11),
-            Text(
-              rec.description!,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-          if (otherMember != null) ...[
-            const SizedBox(height: 13),
-            CecBadge(
-              label: '${isReceived ? 'DE' : 'À'} ${otherMember.fullName}',
-              color: AppTheme.accentDark,
-              icon: isReceived
-                  ? Icons.person_outline_rounded
-                  : Icons.send_rounded,
-            ),
-          ],
-        ],
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 40),
+            children: [
+              CecBadge(
+                label: isReceived ? 'REÇUE' : 'ENVOYÉE',
+                color: AppTheme.accentDark,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                _title,
+                style: Theme.of(detailContext).textTheme.headlineLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Le $_date',
+                style: Theme.of(detailContext).textTheme.bodySmall,
+              ),
+              if (_otherMember != null) ...[
+                const SizedBox(height: 28),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: MemberAvatar(
+                    name: _otherMember!.fullName,
+                    imageUrl: _otherMember!.photoUrl,
+                    radius: 24,
+                  ),
+                  title: Text(_otherMember!.fullName),
+                  subtitle: Text(
+                    isReceived
+                        ? 'Vous recommande ce contact'
+                        : 'Destinataire de votre recommandation',
+                  ),
+                ),
+              ],
+              const SectionHeader(title: 'Le contexte'),
+              Text(
+                rec.description?.isNotEmpty == true
+                    ? rec.description!
+                    : 'Aucun message complémentaire.',
+              ),
+
+              if (rec.email?.isNotEmpty == true ||
+                  rec.telephone?.isNotEmpty == true)
+                const SectionHeader(title: 'Coordonnées du contact'),
+              if (rec.email?.isNotEmpty == true)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.mail_outline),
+                  title: Text(rec.email!),
+                  onTap: () => _contact(
+                    detailContext,
+                    Uri(scheme: 'mailto', path: rec.email!),
+                  ),
+                ),
+              if (rec.telephone?.isNotEmpty == true)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.phone_outlined),
+                  title: Text(rec.telephone!),
+                  onTap: () => _contact(
+                    detailContext,
+                    Uri(
+                      scheme: 'tel',
+                      path: rec.telephone!.replaceAll(' ', ''),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  Future<void> _contact(BuildContext context, Uri uri) async {
+    try {
+      if (await launchUrl(uri)) return;
+    } catch (_) {}
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucune application disponible pour cette action.'),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => CecSurface(
+    onTap: () => _open(context),
+    padding: const EdgeInsets.all(18),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            MemberAvatar(
+              name: _otherMember?.fullName ?? 'Membre',
+              imageUrl: _otherMember?.photoUrl,
+              radius: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _otherMember?.fullName ?? 'Membre',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    isReceived
+                        ? 'Vous recommande un contact'
+                        : 'Votre recommandation',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.north_east_rounded,
+              size: 17,
+              color: AppTheme.textSecondary,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text(_title, style: Theme.of(context).textTheme.titleLarge),
+
+        if (rec.description?.isNotEmpty == true) ...[
+          const SizedBox(height: 8),
+          Text(
+            rec.description!,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+        const SizedBox(height: 18),
+        const Divider(),
+        const SizedBox(height: 12),
+        Text(_date, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    ),
+  );
 }
 
 class CreateRecommendationSheet extends StatefulWidget {
   final VoidCallback onCreated;
-  const CreateRecommendationSheet({super.key, required this.onCreated});
+  final Member? initialRecipient;
+  const CreateRecommendationSheet({
+    super.key,
+    required this.onCreated,
+    this.initialRecipient,
+  });
 
   @override
   State<CreateRecommendationSheet> createState() =>
@@ -329,8 +444,12 @@ class _CreateRecommendationSheetState extends State<CreateRecommendationSheet> {
       final myId = context.read<AuthProvider>().currentMember?.id;
       setState(() {
         _members = list.where((m) => m.id != myId).toList();
+        _selectedMember = _members!
+            .where((m) => m.id == widget.initialRecipient?.id)
+            .firstOrNull;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _error = 'Impossible de charger la liste des membres.';
       });
@@ -338,7 +457,7 @@ class _CreateRecommendationSheetState extends State<CreateRecommendationSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_loading || !_formKey.currentState!.validate()) return;
     if (_selectedMember == null) {
       setState(() => _error = 'Sélectionnez un destinataire.');
       return;
@@ -358,9 +477,10 @@ class _CreateRecommendationSheetState extends State<CreateRecommendationSheet> {
         description: _descCtrl.text.trim(),
       );
       if (mounted) {
-        Navigator.pop(context);
+        final messenger = ScaffoldMessenger.of(context);
         widget.onCreated();
-        ScaffoldMessenger.of(context).showSnackBar(
+        Navigator.pop(context);
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('Recommandation créée.'),
             backgroundColor: AppTheme.successColor,
@@ -368,11 +488,13 @@ class _CreateRecommendationSheetState extends State<CreateRecommendationSheet> {
         );
       }
     } on ApiException catch (e) {
+      if (!mounted) return;
       setState(() {
         _loading = false;
         _error = e.message;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _loading = false;
         _error = 'Erreur lors de la création.';
@@ -382,158 +504,134 @@ class _CreateRecommendationSheetState extends State<CreateRecommendationSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: CecGlassPanel(
-        color: Colors.white.withAlpha(240),
-        blur: 24,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppTheme.dividerColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Nouvelle recommandation',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 20),
-
-                // Recipient dropdown
-                const Text(
-                  'Destinataire *',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                if (_members == null)
-                  const Center(child: CircularProgressIndicator())
-                else
-                  DropdownButtonFormField<Member>(
-                    initialValue: _selectedMember,
-                    decoration: const InputDecoration(
-                      hintText: 'Sélectionner un membre',
-                      prefixIcon: Icon(Icons.person_rounded),
-                    ),
-                    items: _members!
-                        .map(
-                          (m) => DropdownMenuItem(
-                            value: m,
-                            child: Text(
-                              '${m.fullName}${m.company != null ? ' – ${m.company!.nom}' : ''}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedMember = v),
-                    validator: (v) =>
-                        v == null ? 'Sélectionnez un destinataire' : null,
-                  ),
-
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _prenomCtrl,
-                        textCapitalization: TextCapitalization.words,
-                        decoration: const InputDecoration(
-                          labelText: 'Prénom contact *',
-                        ),
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Requis' : null,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _nomCtrl,
-                        textCapitalization: TextCapitalization.characters,
-                        decoration: const InputDecoration(
-                          labelText: 'Nom contact *',
-                        ),
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Requis' : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _telCtrl,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Téléphone',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _descCtrl,
-                  maxLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    prefixIcon: Icon(Icons.text_snippet_outlined),
-                    alignLabelWithHint: true,
-                  ),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _error!,
-                    style: const TextStyle(color: AppTheme.errorColor),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _loading ? null : _submit,
-                    child: _loading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Envoyer la recommandation'),
-                  ),
-                ),
-              ],
+    return SafeArea(
+      top: false,
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
+          children: [
+            Text(
+              'Une rencontre commence ici.',
+              style: Theme.of(context).textTheme.headlineLarge,
             ),
-          ),
+            const SizedBox(height: 28),
+            const Text(
+              'Destinataire *',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            if (_members == null && _error == null)
+              const Center(child: CircularProgressIndicator())
+            else if (_members == null)
+              TextButton.icon(
+                onPressed: () {
+                  setState(() => _error = null);
+                  _loadMembers();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Réessayer'),
+              )
+            else
+              DropdownButtonFormField<Member>(
+                isExpanded: true,
+                initialValue: _selectedMember,
+                decoration: const InputDecoration(
+                  hintText: 'Sélectionner un membre',
+                  prefixIcon: Icon(Icons.person_rounded),
+                ),
+                items: _members!
+                    .map(
+                      (m) => DropdownMenuItem(
+                        value: m,
+                        child: Text(
+                          '${m.fullName}${m.company != null ? ' – ${m.company!.nom}' : ''}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedMember = v),
+                validator: (v) =>
+                    v == null ? 'Sélectionnez un destinataire' : null,
+              ),
+
+            const SizedBox(height: 12),
+
+            TextFormField(
+              controller: _prenomCtrl,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'Prénom du contact *',
+              ),
+              validator: (v) =>
+                  v == null || v.trim().isEmpty ? 'Champ requis' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _nomCtrl,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(labelText: 'Nom du contact *'),
+              validator: (v) =>
+                  v == null || v.trim().isEmpty ? 'Champ requis' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _telCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Téléphone',
+                prefixIcon: Icon(Icons.phone_outlined),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _descCtrl,
+              maxLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                prefixIcon: Icon(Icons.text_snippet_outlined),
+                alignLabelWithHint: true,
+              ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!, style: const TextStyle(color: AppTheme.errorColor)),
+            ],
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _loading || _members == null ? null : _submit,
+                child: _loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Envoyer la recommandation'),
+              ),
+            ),
+          ],
         ),
       ),
     );

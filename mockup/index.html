@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#272262" />
+    <title>CEC · Maquette mobile</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="vendor/lucide.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <aside class="studio" aria-label="Commandes de la maquette">
+      <img
+        class="studio-logo"
+        src="assets/logo_purple_nobg.png"
+        alt="Club des Entrepreneurs du Cotentin"
+      />
+      <p class="studio-kicker">DIRECTION MOBILE / 01</p>
+      <h1>Des liens.<br />Des idées.<br />Du mouvement.</h1>
+      <p class="studio-intro">Une nouvelle expérience pour le réseau CEC.</p>
+      <label class="studio-label" for="screen-picker"
+        >Explorer les écrans</label
+      >
+      <select id="screen-picker" aria-label="Explorer les écrans"></select>
+      <fieldset class="studio-modes">
+        <legend>Session de démonstration</legend>
+        <label
+          ><input type="radio" name="session" value="member" checked />
+          Membre</label
+        >
+        <label
+          ><input type="radio" name="session" value="public" /> Visiteur</label
+        >
+      </fieldset>
+      <label class="studio-label" for="state-picker">État des listes</label>
+      <select id="state-picker">
+        <option value="ready">Contenu chargé</option>
+        <option value="empty">Liste vide</option>
+        <option value="loading">Chargement</option>
+        <option value="error">Erreur de connexion</option>
+      </select>
+      <div class="studio-links">
+        <a href="board.html"
+          >Vue d’ensemble <i data-lucide="arrow-up-right"></i></a
+        ><button id="reset-demo">
+          Réinitialiser la démo <i data-lucide="rotate-ccw"></i>
+        </button>
+      </div>
+      <p class="studio-disclaimer">
+        Prototype local · données fictives<br />Aucune connexion à la
+        production.
+      </p>
+    </aside>
+    <div class="phone-wrap">
+      <div class="phone" id="phone">
+        <div class="status-bar" aria-hidden="true">
+          <span>9:41</span><span class="status-island"></span
+          ><span class="status-icons"
+            ><i data-lucide="signal"></i><i data-lucide="wifi"></i
+            ><i data-lucide="battery-full"></i
+          ></span>
+        </div>
+        <main id="app" tabindex="-1"></main>
+        <nav id="navigation" aria-label="Navigation principale"></nav>
+        <div id="toast" role="status" aria-live="polite"></div>
+        <div class="home-indicator" aria-hidden="true"></div>
+        <dialog id="sheet" aria-labelledby="sheet-title"></dialog>
+      </div>
+      <p class="frame-caption">CEC / MOBILE CONCEPT / OCTOBRE 2026</p>
+    </div>
+    <aside class="design-note" aria-label="Repères de conception">
+      <span class="note-number">01 / 03</span>
+      <h2>La place aux<br />relations.</h2>
+      <p>
+        Une lecture immédiate.<br />Des actions à portée de pouce.<br />Du
+        verre, juste où il faut.
+      </p>
+      <div class="palette" aria-label="Palette CEC">
+        <span style="background: #272262" title="Violet CEC #272262"></span
+        ><span style="background: #5cc7cf" title="Turquoise CEC #5CC7CF"></span
+        ><span style="background: #f5f7fa" title="Fond #F5F7FA"></span
+        ><span style="background: #171827" title="Texte #171827"></span>
+      </div>
+      <p class="note-small">
+        Manrope · grille de 4 px<br />Surfaces 8 px · navigation 20 px
+      </p>
+      <a href="README.md"
+        >Parcours et notes de conception <i data-lucide="arrow-up-right"></i
+      ></a>
+    </aside>
+  </body>
+</html>
