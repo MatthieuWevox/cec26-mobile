@@ -110,3 +110,12 @@ flutter build ipa --release --build-name=2.0.1 --build-number=21
 Le numéro iOS 21 était libre lors de l'audit du 28 septembre. S'il a depuis été utilisé sur App Store Connect, prendre le prochain numéro libre avec `--build-number`. Utiliser la fiche existante `net.wevox.cec.cec`, équipe `6YFVLX2X38`, et vérifier dans Xcode que `GoogleService-Info.plist` est inclus une seule fois dans les ressources Runner. Le projet contient déjà ces réglages ; ne pas créer une nouvelle app Firebase/Apple ni ajouter Firebase une seconde fois avec CocoaPods.
 
 Importer l'archive avec Xcode Organizer ou l'IPA avec Transporter, puis installer via TestFlight. Se connecter et accepter les notifications ; vérifier « Appareil enregistré » puis une réception ciblée avant la soumission App Store. Aucun build iOS n'est compilé depuis Windows. Voir `NOTIFICATIONS_AUDIT_2026-09-28.md` pour la recette détaillée et les limites encore non validées sur téléphone réel.
+
+## Refonte premium - 2 octobre 2026
+
+- La version 21 (2.0.1) est devenue disponible pendant la preparation de cette nouvelle mise a jour.
+- Version **24 (2.1.0)** soumise en production vers 13 h 29, heure de Paris. Confirmation Google : **Modifications en cours d'examen**, avec verifications rapides encore en cours. Deploiement complet en France, publication automatique apres approbation, comme auparavant.
+- Seul le bundle 24 est inclus. Les iterations 22 et 23 n'ont pas ete soumises. Notes de version francaises mises a jour ; fiche store et declarations conservees.
+- Code final de la refonte pousse sur master : `3c94edb`. 25 tests reussis, analyse sans anomalie, signature release verifiee, controle visuel sur Samsung sans effacement des donnees.
+- Rapport complet, empreinte du bundle et limites de verification : `PREMIUM_RELEASE_WORKLOG.md`. Preuve locale : `build/qa-premium/google-play-24-review.jpg`.
+- Les commandes Mac ci-dessus documentent la precedente mise a jour 2.0.1. Pour cette refonte, utiliser la version courante du pubspec (2.1.0+24) et un numero iOS disponible, pas les anciens arguments 2.0.1/21. Aucun build iOS ni envoi App Store effectue ici.
