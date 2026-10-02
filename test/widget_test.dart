@@ -7,6 +7,7 @@ import 'package:cec2026/screens/private/login_screen.dart';
 import 'package:cec2026/theme/app_theme.dart';
 import 'package:cec2026/widgets/common_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -147,6 +148,13 @@ void main() {
     );
 
     expect(find.byType(NewsScreen), findsOneWidget);
+    final bars = tester
+        .widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+          find.byType(AnnotatedRegion<SystemUiOverlayStyle>).first,
+        )
+        .value;
+    expect(bars.statusBarIconBrightness, Brightness.dark);
+    expect(bars.systemNavigationBarIconBrightness, Brightness.dark);
     expect(find.byType(LoginScreen), findsNothing);
     expect(find.text('Découvrir le Club sans compte'), findsNothing);
 
