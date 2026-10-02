@@ -40,8 +40,8 @@ dependencies:
   cached_network_image: ^3.4.0
   intl: 0.20.2
   google_fonts: ^8.2.1
-  firebase_core: ^4.14.0
-  firebase_messaging: ^16.6.0
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
   flutter_local_notifications: ^20.1.0
   image_picker: ^1.2.3
   file_picker: ^11.0.3
@@ -60,7 +60,7 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   config:
-    enable-swift-package-manager: true
+    enable-swift-package-manager: false
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -76,4 +76,3 @@ flutter_launcher_icons:
   image_path: "assets/logo_app.png"
   adaptive_icon_background: "#272262"
   adaptive_icon_foreground: "assets/logo_app.png"
-
