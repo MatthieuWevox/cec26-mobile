@@ -68,39 +68,47 @@ class _MainScreenState extends State<MainScreen>
       curve: AppTheme.motionCurve,
     );
 
-    return Scaffold(
-      extendBody: true,
-      resizeToAvoidBottomInset: true,
-      body: CecBackground(
-        child: FadeTransition(
-          opacity: reduceMotion
-              ? const AlwaysStoppedAnimation(1)
-              : Tween<double>(begin: 0.82, end: 1).animate(curved),
-          child: ScaleTransition(
-            scale: reduceMotion
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.white,
+      ),
+      child: Scaffold(
+        extendBody: true,
+        resizeToAvoidBottomInset: true,
+        body: CecBackground(
+          child: FadeTransition(
+            opacity: reduceMotion
                 ? const AlwaysStoppedAnimation(1)
-                : Tween<double>(begin: 0.992, end: 1).animate(curved),
-            alignment: Alignment.center,
-            child: IndexedStack(index: _currentIndex, children: _screens),
+                : Tween<double>(begin: 0.82, end: 1).animate(curved),
+            child: ScaleTransition(
+              scale: reduceMotion
+                  ? const AlwaysStoppedAnimation(1)
+                  : Tween<double>(begin: 0.992, end: 1).animate(curved),
+              alignment: Alignment.center,
+              child: IndexedStack(index: _currentIndex, children: _screens),
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: AnimatedSwitcher(
-        duration: reduceMotion ? Duration.zero : AppTheme.motionFast,
-        switchInCurve: AppTheme.motionCurve,
-        switchOutCurve: Curves.easeInCubic,
-        child: keyboardIsOpen
-            ? const SizedBox.shrink(key: ValueKey('keyboard-navigation-hidden'))
-            : SafeArea(
-                key: const ValueKey('floating-navigation'),
-                top: false,
-                minimum: const EdgeInsets.only(bottom: 8),
-                child: _FloatingGlassNavigation(
-                  selectedIndex: _currentIndex,
-                  isLoggedIn: isLoggedIn,
-                  onSelected: _selectDestination,
+        bottomNavigationBar: AnimatedSwitcher(
+          duration: reduceMotion ? Duration.zero : AppTheme.motionFast,
+          switchInCurve: AppTheme.motionCurve,
+          switchOutCurve: Curves.easeInCubic,
+          child: keyboardIsOpen
+              ? const SizedBox.shrink(
+                  key: ValueKey('keyboard-navigation-hidden'),
+                )
+              : SafeArea(
+                  key: const ValueKey('floating-navigation'),
+                  top: false,
+                  minimum: const EdgeInsets.only(bottom: 8),
+                  child: _FloatingGlassNavigation(
+                    selectedIndex: _currentIndex,
+                    isLoggedIn: isLoggedIn,
+                    onSelected: _selectDestination,
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
