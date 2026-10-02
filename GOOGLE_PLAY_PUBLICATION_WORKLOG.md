@@ -77,3 +77,36 @@ Le statut 405 confirme que GET n'est pas accepté pour ces routes d'écriture ; 
 Consulter le résultat Google et traiter tout retour de validation avant d'annoncer l'application disponible. Aucun suivi automatique n'a été programmé. La notification générale concernant la validation développeur Android avant le 30 septembre n'a pas bloqué cet envoi et reste à examiner par le propriétaire.
 
 Ordre des six visuels téléphone : 04, 01, 03, 02, 05, 06. Aucun changement effectué sur l'application Coprism ni sur l'App Store.
+
+## Mise à jour notifications - 2 octobre 2026
+
+- Demande du propriétaire : envoyer la mise à jour Android et pousser le code iOS sur GitHub pour compilation sur son MacBook.
+- Console vérifiée : version 2 (1.0.0) disponible sur Google Play, déploiement complet, France, publication affichée le 2 octobre à 09:34.
+- Code notifications déjà commité dans `832e6aa`, confirmé présent sur `origin/master` après `git fetch`. Fichiers Firebase Android/iOS suivis ; clés privées `.p8` et signature Android non suivies.
+- Version de mise à jour : **2.0.1 (21)**. Brouillon production créé, ID de release Console 3. Ne pas confondre cet ID interne avec le code Android 21.
+- 14 tests Flutter réussis. Deux avertissements de style corrigés dans le service de notifications ; aucune modification du comportement.
+- Analyse Flutter sans avertissement après correction ; 14 tests réussis à nouveau. Bundle release reconstruit avec succès, manifeste 2.0.1/code 21 et permissions Firebase vérifiés.
+- SHA-256 du bundle importé : `50BE13E1B704E0322EFCF6EFA33673717C28D35C2D87EA8932698BCCC1686A55` (60 401 058 octets environ, affichage Flutter 57,6 Mo).
+- Notes françaises : notifications de recommandations/remerciements, alertes de création/modification de réunion, ouverture directe des réunions et suivi de l'activation.
+- Bundle accepté par Google : API minimale 24, cible 36, trois ABI ; aucune perte de compatibilité d'appareils. État de la release : « La release est prête », sans erreur bloquante.
+- Mise à jour **21 (2.0.1)** enregistrée puis envoyée pour examen le **2 octobre 2026**. Une seule modification soumise : release de production, déploiement complet (100 %) sur le périmètre existant, France. Fiche du store et déclarations inchangées.
+- Confirmation visible : **Modifications en cours d'examen**. Vérifications rapides encore en cours (maximum affiché 15 minutes) ; Google indique que l'examen suivra automatiquement. La nouvelle version n'est pas encore approuvée ni disponible ; la version 2 reste celle publiée.
+- Publication gérée désactivée, conservée : publication attendue automatiquement après approbation Google. Aucun suivi automatique programmé et aucun délai garanti.
+- Preuve locale hors Git : `build/google-play-notifications-submitted-2026-10-02.png`. AAB dans `build/app/outputs/bundle/release/app-release.aab`.
+- Réception sur téléphone réel non revalidée pendant cette publication ; les contrôles ci-dessus ne remplacent pas une recette de réception Android/iOS. Aucun test livré aux membres.
+
+### Récupération sur MacBook
+
+Dans le dépôt mobile sur le Mac, vérifier d'abord `git status`. En présence de modifications locales, les préserver et les fusionner ; ne pas utiliser de reset forcé.
+
+```bash
+git switch master
+git pull --ff-only origin master
+flutter pub get
+flutter config --enable-swift-package-manager
+flutter build ipa --release --build-name=2.0.1 --build-number=21
+```
+
+Le numéro iOS 21 était libre lors de l'audit du 28 septembre. S'il a depuis été utilisé sur App Store Connect, prendre le prochain numéro libre avec `--build-number`. Utiliser la fiche existante `net.wevox.cec.cec`, équipe `6YFVLX2X38`, et vérifier dans Xcode que `GoogleService-Info.plist` est inclus une seule fois dans les ressources Runner. Le projet contient déjà ces réglages ; ne pas créer une nouvelle app Firebase/Apple ni ajouter Firebase une seconde fois avec CocoaPods.
+
+Importer l'archive avec Xcode Organizer ou l'IPA avec Transporter, puis installer via TestFlight. Se connecter et accepter les notifications ; vérifier « Appareil enregistré » puis une réception ciblée avant la soumission App Store. Aucun build iOS n'est compilé depuis Windows. Voir `NOTIFICATIONS_AUDIT_2026-09-28.md` pour la recette détaillée et les limites encore non validées sur téléphone réel.

@@ -169,13 +169,15 @@ class NotificationService {
         _retryTimer?.cancel();
         return;
       }
-      if (!await _waitForApnsToken())
+      if (!await _waitForApnsToken()) {
         throw StateError('APNs token unavailable');
+      }
       final token = await _messaging.getToken().timeout(
         const Duration(seconds: 15),
       );
-      if (token == null || token.isEmpty)
+      if (token == null || token.isEmpty) {
         throw StateError('FCM token unavailable');
+      }
       if (epoch != _sessionEpoch) return;
       await _registerToken(api, token).timeout(const Duration(seconds: 20));
       if (epoch != _sessionEpoch) return;
